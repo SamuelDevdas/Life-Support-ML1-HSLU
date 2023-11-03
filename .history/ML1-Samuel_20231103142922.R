@@ -28,10 +28,14 @@ na_columns <- names(df_support)[which(na_counts > 0)]
 # Print names of columns with missing values:
 print(data.frame(Column = na_columns, Missing_Values = na_counts[na_columns]))
 
-# Counting complete cases
-num_complete_cases <- sum(complete.cases(df_support))
-num_complete_cases
+# Number of rows with missing values:
+sum(complete.cases(df_support))
 
+complete.cases(df_support)
 
-
-
+x <- cbind(x1 = 3, x2 = c(4:1, 2:5))
+rowSums(x); colSums(x)
+dimnames(x)[[1]] <- letters[1:8]
+rowSums(x); colSums(x); rowMeans(x); colMeans(x)
+x[] <- as.integer(x)
+rowSums(x); colSums(x)

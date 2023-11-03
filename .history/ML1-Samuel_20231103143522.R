@@ -33,5 +33,11 @@ num_complete_cases <- sum(complete.cases(df_support))
 num_complete_cases
 
 
+# Assuming df_support is your data frame
+complete_rows <- complete.cases(df_support)
+
+# To get the data frame with complete cases only
+df_complete <- df_support[complete_rows, ]
+df_complete
 
 
