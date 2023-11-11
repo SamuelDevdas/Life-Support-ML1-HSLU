@@ -27,7 +27,7 @@ The dataset, sourced from [UCI Machine Learning Repository](https://archive.ics.
 
 ## Team Members
 - Samuel Devdas
-- Pradip Ramachandran
+- Pradip Ravichandran
 
 ## Acknowledgements
 Thanks to the providers of the dataset and our course instructors for guidance.
