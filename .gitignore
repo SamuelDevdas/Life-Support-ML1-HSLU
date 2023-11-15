@@ -1,1 +1,38 @@
+### R ###
+# History files
+.Rhistory
+.Rapp.history
+/*_files/
+
+# knitr
+*-concordance.tex
+*-tikzDictionary
+
+# knitr and R markdown default cache directories
+*_cache/
+/cache/
+
+### LaTeX ###
+## Core latex/pdflatex auxiliary files:
+*.aux
+*.lof
+*.log
+*.lot
+*.fls
+*.out
+*.toc
+*.fmt
+*.fot
+*.cb
+*.cb2
+.*.lb
+
+### Windows ###
+*.ini
+
+### macOS ###
+.DS_Store
+
+### macOS ###
 .history/
+Archives

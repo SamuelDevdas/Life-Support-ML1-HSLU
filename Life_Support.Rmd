@@ -1,0 +1,94 @@
+---
+title: "Life Support"
+author: "Samuel Devdas, Pradip Ravichandran"
+date: "2024-01-12"
+output:
+  pdf_document: default
+  html_document: default
+---
+  
+```{r setup, include=TRUE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r, include=FALSE}
+knitr::opts_chunk$set(comment = "#")
+```
+
+## 1. Introduction
+In the bustling world of data science, Pradip Ravichandran and Samuel Devdas, two ambitious students, found themselves immersed in a challenging project. Their mission? To unravel the intricacies of a dataset from https://archive.ics.uci.edu/dataset/880/support2 comprising 9105 critically ill patients across five United States medical centers, spanning the years 1989 to 1994. This treasure trove of information aimed to shed light on the 2- and 6-month survival rates of patients grappling with various critical illnesses.
+
+## 2. Import Library
+The following libraries were used in this work:
+
+```{r LS_2, echo=TRUE, ,include=TRUE, warning=FALSE, message=FALSE}
+#library(readr)        # Data file reading and parsing
+#library(tidyverse)    # Data manipulation and visualization
+#library(ggplot2)      # Visualization and graphics
+#library(Amelia)       # Missing data handling and imputation
+#library(mgcv)         # Fitting GAM
+#library(caret)
+#library(neuralnet)
+#library(e1071)
+
+```
+
+## 3. Load Data Set
+
+```{r LS_3, echo=TRUE}
+data <- read.csv("support2.csv", header = TRUE, sep = ",")
+```
+
+## 4. Data Analyse
+First in line was Samuel, armed with a passion for data analysis. He delved into the dataset, exploring each variable – from demographic idetails like age, sex, and education level to disease categories and severity indicators. He meticulously examined missing values, ensuring a clean and reliable dataset for further analysis.
+
+```{r LS_4, echo=TRUE}
+source("DA.R")
+```
+
+Samuel's keen eye uncovered patterns and relationships, providing a solid foundation for the subsequent stages of their project.
+
+
+## 5. Linear Model
+Emboldened by the insights from Samuel's analysis, the duo ventured into building a Linear Model. Samuel, with his flair for mathematical precision, took the lead. He meticulously crafted a model that encapsulated the essence of the dataset, laying the groundwork for predicting survival rates based on physiological and demographic features.
+```{r LS_5, echo=TRUE}
+#source("LM.R")
+```
+
+## 6. Generalized Linear Models
+But the journey didn't stop there. Samuel, driven by a thirst for deeper understanding, delved into the realm of Generalized Linear Models (GLMs). With the family set to Poisson, he explored the nuances of count data, bringing a new dimension to their predictive capabilities. The exploration continued with the family set to Binomial, unraveling the mysteries of binary outcomes.
+```{r LS_6_1, echo=TRUE}
+#source("GLM Poisson.R")
+```
+
+```{r LS_6_2, echo=TRUE}
+#source("GLM Binomial.R")
+```
+
+## 7. Generalized Additive Model 
+As the baton passed to Pradip, the project took a nonlinear turn. Pradip, with an affinity for complexity, introduced a Generalized Additive Model (GAM). This allowed them to capture non-linear relationships, providing a more nuanced understanding of the factors influencing patient survival.
+```{r LS_7, echo=TRUE}
+#source("GAM.R")
+```
+
+## 8. Neural Networks
+In the ever-evolving landscape of data science, Pradip took the reins for the next leg – the realm of Neural Networks. With an aptitude for the intricacies of artificial intelligence, he crafted a network that could learn and adapt, pushing the boundaries of predictive accuracy.
+```{r LS_8, echo=TRUE}
+#source("NN.R")
+```
+
+## 9. Support Vector Machine
+The journey continued with Pradip steering towards a Support Vector Machine (SVM). As the data danced through hyperplanes, Pradip fine-tuned the model to discern the subtle boundaries between survival and adversity.
+```{r LS_9, echo=TRUE}
+#source("SM.R")
+```
+
+## 10. Optimization problem
+Yet, the dynamic duo was not content to rest on their laurels. Samuel and Pradip united their skills to tackle an optimization problem head-on. With a fusion of mathematical prowess and computational finesse, they sought to optimize a critical aspect of the project, bringing it to new heights.
+
+## 11. Conclusion
+In the year 2023, Pradip Ravichandran and Samuel Devdas stood at the intersection of traditional statistical models and cutting-edge machine learning techniques. Their journey through linear, generalized, and additive models, neural networks, and support vector machines painted a vivid picture of the power that data science held in transforming raw information into actionable insights. As they solved optimization problems in unison, their story echoed the collaborative spirit essential in the world of data science, where the fusion of diverse skills creates a symphony of knowledge and innovation.
+
+
+
+
+
