@@ -3,6 +3,7 @@
 .Rhistory
 .Rapp.history
 /*_files/
+.RData
 
 # knitr
 *-concordance.tex
