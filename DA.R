@@ -1,5 +1,5 @@
 # Group the categorical variables
-cat_interest <- c("sex", "death","hospdead", "dzgroup", "dzclass", "income", "race", "diabetes", "dementia", "ca", "dnr", "adlp", "adls", "sfdm2")
+cat_interest <- c("sex", "death","hospdead", "dzgroup", "dzclass", "income", "race", "diabetes", "dementia", "ca", "adlp", "adls", "sfdm2")
 
 # Apply unique function to validate categorical variables and check their structure
 unique_values <- sapply(data[cat_interest], unique)
@@ -72,16 +72,16 @@ top_correlations <- head(corr_melted, 40)
 #print(top_correlations)
 
 
-# Missing values for prg2m, prg6m, surv2m, surv6m, totcst, charges, aps, sps, avtisst, sfdm2
+# Missing values for totcst, charges, avtisst, sfdm2
 # Check for Missing Values in each column and sort in descending order
-na_counts_cor <- colSums(is.na(data[c("prg2m", "prg6m", "surv2m", "surv6m", "totcst", "charges", "aps", "sps", "avtisst", "sfdm2")]))
+na_counts_cor <- colSums(is.na(data[c("totcst", "charges", "avtisst", "sfdm2")]))
 na_counts_cor <- sort(na_counts_cor, decreasing = TRUE)
 #na_counts_cor
 
 
-# We drop the 'redundant' and with 'high missing values' variables ie. prg2m, prg6m and surv6m, totcst, sps, avtisst
+# We drop the 'redundant' and with 'high missing values' variables ie. totcst, avtisst
 # And 'column_to_drop' is the name of the column you want to drop
-df_updated_mis <- subset(df_updated_mis, select = -c(prg2m, prg6m, surv6m, totcst, sps, avtisst, sfdm2))
+df_updated_mis <- subset(df_updated_mis, select = -c(totcst, avtisst, sfdm2))
 
 # Check complete cases
 #num_complete_cases <- sum(complete.cases(df_updated_mis))

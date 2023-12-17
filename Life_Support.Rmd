@@ -50,8 +50,25 @@ According to the HBiostat Repository (<https://hbiostat.org/data/repo/supportdes
 | White blood count   | wblc  | 9             |
 | Urine output        | urine | 2502          |
 
+And following predictors should be removed, as they are findings from a previous model:
+
+| Baseline Variable                             | short  |
+|-----------------------------------------------|--------|
+| APACHE III day 3 physiology score             | aps    |
+| Patient had DNR order                         | dnr    |
+| Day of DNR order (<0 if before study)         | dnrday |
+| Physician’s 2-month survival estimate for pt. | prg2m  |
+| Physician’s 6-month survival estimate for pt. | prg6m  |
+| SUPPORT day 3 physiology score                | sps    |
+| SUPPORT model 2-month survival estimate       | surv2m |
+| SUPPORT model 6-month survival estimate       | surv6m |
+
+
 ```{r LS_3, echo=TRUE}
 data <- read.csv("support2.csv", header = TRUE, sep = ",")
+
+# Remove the mention columns
+data[ , c("aps", "dnr", "dnrday", "prg2m", "prg6m", "sps", "surv2m", "surv6m")] <- list(NULL)
 
 # Create a named vector with default values for each variable
 default_values <- c(
@@ -103,18 +120,13 @@ To determine further, which variables to drop, we will create a correlation matr
 
 We find that the following variables are highly correlated with other variables:
 
-1.  sur6m : surv2m (model predicted 6 months and 2 months survival estimates for patient ) - (Cor = 0.96)
-2.  totcst : charges (cost to charge ratio : total charges) - (Cor = 0.83)
+1.  totcst : charges (cost to charge ratio : total charges) - (Cor = 0.83)
 3.  aps (APACHE III day 3 physiology score : SUPPORT physiology score) : sps (predicted SUPPORT physiology score on day 3 ) - (Cor = 0.77)
 4.  aps : avtisst (Average TISS score - quantifies type and number of intensive care treatments. ) - (Cor = 0.59)
 5.  sfdm2 (Level of functional disability of the patient in a 1-5 scale. (Naturally correlated with other physiological scores ))
 
 Identify out which other variables are also Survival estimates and check their respective number of missing values.
 
-1.  prg2m : Physician's 2-month survival estimate for patient.
-2.  prg6m : Physician's 6-month survival estimate for patient.
-3.  prg2m : surv2m - (Cor = 0.55)
-4.  prg6m : surv6m - (Cor = 0.53)
 
 ### Imputing Missing Values
 
@@ -127,17 +139,15 @@ Impute other variables:
 We will drop the 'rows' with missing values for the following variables:
 
 1.  charges
-2.  dnrday
 3.  scoma
-4.  aps
-5.  surv2m
 6.  meanbp
 7.  hrt
 
 Samuel's keen eye uncovered patterns and relationships, providing a solid foundation for the subsequent stages of their project.
 ```{r LS_4_3, echo=FALSE}
 data <- df_updated_mis
-stack(sort(colSums(is.na(data)), decreasing = TRUE))
+sorted_sums <- colSums(is.na(data))
+stack(sort(sorted_sums[sorted_sums != 0], decreasing = TRUE))
 ```
 
 # Linear Model
