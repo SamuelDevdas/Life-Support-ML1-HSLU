@@ -7,17 +7,21 @@ output:
     theme: cayman
     css: styles.css
     highlight: github
+    df_print: paged
     toc: true
     number_sections: true
 ---
-  
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+
 # Introduction
-In the bustling world of data science, Pradip Ravichandran and Samuel Devdas, two ambitious students, found themselves immersed in a challenging project. Their mission? To unravel the intricacies of a dataset from https://archive.ics.uci.edu/dataset/880/support2 comprising 9105 critically ill patients across five United States medical centers, spanning the years 1989 to 1994. This treasure trove of information aimed to shed light on the 2- and 6-month survival rates of patients grappling with various critical illnesses.
+
+In the bustling world of data science, Pradip Ravichandran and Samuel Devdas, two ambitious students, found themselves immersed in a challenging project. Their mission? To unravel the intricacies of a dataset from <https://archive.ics.uci.edu/dataset/880/support2> comprising 9105 critically ill patients across five United States medical centers, spanning the years 1989 to 1994. This treasure trove of information aimed to shed light on the 2- and 6-month survival rates of patients grappling with various critical illnesses.
 
 # Import Library
+
 The following libraries were used in this work:
 
 ```{r LS_2, echo=TRUE, ,include=TRUE, warning=FALSE, message=FALSE}
@@ -29,33 +33,125 @@ The following libraries were used in this work:
 #library(caret)
 #library(neuralnet)
 #library(e1071)
-
+library(reshape2)
 ```
 
 # Load Data Set
 
+According to the HBiostat Repository (<https://hbiostat.org/data/repo/supportdesc>, Professor Frank Harrell) the following default values have been found to be useful in imputing missing baseline physiologic data:
+
+| Baseline Variable   | short | Default Value |
+|---------------------|-------|---------------|
+| Serum albumin       | alb   | 3.5           |
+| PaO2/FiO2 ratio     | pafi  | 333.3         |
+| Bilirubin           | bili  | 1.01          |
+| Serum Creatinine    | crea  | 1.01          |
+| Blood urea nitrogen | bun   | 6.51          |
+| White blood count   | wblc  | 9             |
+| Urine output        | urine | 2502          |
+
 ```{r LS_3, echo=TRUE}
 data <- read.csv("support2.csv", header = TRUE, sep = ",")
+
+# Create a named vector with default values for each variable
+default_values <- c(
+    alb = 3.5, pafi = 333.3, bili = 1.01,
+    crea = 1.01, bun = 6.51, wblc = 9.0, urine = 2502
+)
+
+# Loop through the vector to replace missing value
+for (var in names(default_values)) {
+    data[[var]][is.na(data[[var]])] <- default_values[var]
+}
+
 ```
 
 # Data Analyse
-First in line was Samuel, armed with a passion for data analysis. He delved into the dataset, exploring each variable – from demographic idetails like age, sex, and education level to disease categories and severity indicators. He meticulously examined missing values, ensuring a clean and reliable dataset for further analysis.
 
-```{r LS_4, echo=FALSE}
+## Inspection
+
+First in line was Samuel, armed with a passion for data analysis. He delved into the dataset, exploring each variable -- from demographic details like age, sex, and education level to disease categories and severity indicators.
+
+```{r LS_4_1, echo=FALSE}
+str(data)
 source("DA.R")
 ```
 
-Samuel's keen eye uncovered patterns and relationships, providing a solid foundation for the subsequent stages of their project.
+After Inspecting closely, We see that some categorical variables datatype are not factors eg. `$ sex : chr  "male" "female"`
 
+```{r LS_4_1_1, echo=FALSE}
+str(unique_values)
+```
+
+## Data Cleaning and Preprocessing
+
+He meticulously examined missing values, ensuring a clean and reliable dataset for further analysis.
+
+```{r LS_4_2, echo=FALSE}
+str(data[cat_interest])
+```
+
+We have only `r sum(complete.cases(data))` complete cases *(rows with no missing values)* out of `r dim(data)[1]` rows. This is a very small number of complete cases. In order to make the dataset usable, we will have to find identify which variables have the most missing values and drop them from the dataset.\
+Variables with the most missing values are:
+
+`r stack(sort(colSums(is.na(data)), decreasing = TRUE))`
+
+After removing the variables with more than 50% missing values *(adlp, adls, glucose)*, we still have only `r sum(complete.cases(df_updated_mis))` complete cases.\
+To determine further, which variables to drop, we will create a correlation matrix and identify the variables with high correlation.
+
+`r top_correlations`
+
+We find that the following variables are highly correlated with other variables:
+
+1.  sur6m : surv2m (model predicted 6 months and 2 months survival estimates for patient ) - (Cor = 0.96)
+2.  totcst : charges (cost to charge ratio : total charges) - (Cor = 0.83)
+3.  aps (APACHE III day 3 physiology score : SUPPORT physiology score) : sps (predicted SUPPORT physiology score on day 3 ) - (Cor = 0.77)
+4.  aps : avtisst (Average TISS score - quantifies type and number of intensive care treatments. ) - (Cor = 0.59)
+5.  sfdm2 (Level of functional disability of the patient in a 1-5 scale. (Naturally correlated with other physiological scores ))
+
+Identify out which other variables are also Survival estimates and check their respective number of missing values.
+
+1.  prg2m : Physician's 2-month survival estimate for patient.
+2.  prg6m : Physician's 6-month survival estimate for patient.
+3.  prg2m : surv2m - (Cor = 0.55)
+4.  prg6m : surv6m - (Cor = 0.53)
+
+### Imputing Missing Values
+
+Impute other variables:
+
+-   income
+-   edu
+-   ph
+
+We will drop the 'rows' with missing values for the following variables:
+
+1.  charges
+2.  dnrday
+3.  scoma
+4.  aps
+5.  surv2m
+6.  meanbp
+7.  hrt
+
+Samuel's keen eye uncovered patterns and relationships, providing a solid foundation for the subsequent stages of their project.
+```{r LS_4_3, echo=FALSE}
+data <- df_updated_mis
+stack(sort(colSums(is.na(data)), decreasing = TRUE))
+```
 
 # Linear Model
+
 Emboldened by the insights from Samuel's analysis, the duo ventured into building a Linear Model. Samuel, with his flair for mathematical precision, took the lead. He meticulously crafted a model that encapsulated the essence of the dataset, laying the groundwork for predicting survival rates based on physiological and demographic features.
+
 ```{r LS_5, echo=FALSE}
 #source("LM.R")
 ```
 
 # Generalized Linear Models
+
 But the journey didn't stop there. Samuel, driven by a thirst for deeper understanding, delved into the realm of Generalized Linear Models (GLMs). With the family set to Poisson, he explored the nuances of count data, bringing a new dimension to their predictive capabilities. The exploration continued with the family set to Binomial, unraveling the mysteries of binary outcomes.
+
 ```{r LS_6_1, echo=FALSE}
 #source("GLM Poisson.R")
 ```
@@ -64,31 +160,34 @@ But the journey didn't stop there. Samuel, driven by a thirst for deeper underst
 #source("GLM Binomial.R")
 ```
 
-# Generalized Additive Model 
+# Generalized Additive Model
+
 As the baton passed to Pradip, the project took a nonlinear turn. Pradip, with an affinity for complexity, introduced a Generalized Additive Model (GAM). This allowed them to capture non-linear relationships, providing a more nuanced understanding of the factors influencing patient survival.
+
 ```{r LS_7, echo=FALSE}
 #source("GAM.R")
 ```
 
 # Neural Networks
-In the ever-evolving landscape of data science, Pradip took the reins for the next leg – the realm of Neural Networks. With an aptitude for the intricacies of artificial intelligence, he crafted a network that could learn and adapt, pushing the boundaries of predictive accuracy.
+
+In the ever-evolving landscape of data science, Pradip took the reins for the next leg -- the realm of Neural Networks. With an aptitude for the intricacies of artificial intelligence, he crafted a network that could learn and adapt, pushing the boundaries of predictive accuracy.
+
 ```{r LS_8, echo=FALSE}
 #source("NN.R")
 ```
 
 # Support Vector Machine
+
 The journey continued with Pradip steering towards a Support Vector Machine (SVM). As the data danced through hyperplanes, Pradip fine-tuned the model to discern the subtle boundaries between survival and adversity.
+
 ```{r LS_9, echo=FALSE}
 #source("SM.R")
 ```
 
 # Optimization problem
+
 Yet, the dynamic duo was not content to rest on their laurels. Samuel and Pradip united their skills to tackle an optimization problem head-on. With a fusion of mathematical prowess and computational finesse, they sought to optimize a critical aspect of the project, bringing it to new heights.
 
 # Conclusion
+
 In the year 2023, Pradip Ravichandran and Samuel Devdas stood at the intersection of traditional statistical models and cutting-edge machine learning techniques. Their journey through linear, generalized, and additive models, neural networks, and support vector machines painted a vivid picture of the power that data science held in transforming raw information into actionable insights. As they solved optimization problems in unison, their story echoed the collaborative spirit essential in the world of data science, where the fusion of diverse skills creates a symphony of knowledge and innovation.
-
-
-
-
-

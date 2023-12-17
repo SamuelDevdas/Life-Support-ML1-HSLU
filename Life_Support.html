@@ -29,6 +29,1277 @@ document.addEventListener('DOMContentLoaded', function(e) {
   }
 });
 </script>
+<style type="text/css">.pagedtable {
+overflow: auto;
+padding-left: 8px;
+padding-right: 8px;
+}
+.pagedtable-wrapper {
+border: 1px solid #ccc;
+border-radius: 4px;
+margin-bottom: 10px;
+}
+.pagedtable table {
+width: 100%;
+max-width: 100%;
+margin: 0;
+}
+.pagedtable th {
+padding: 0 5px 0 5px;
+border: none;
+border-bottom: 2px solid #dddddd;
+min-width: 45px;
+}
+.pagedtable-empty th {
+display: none;
+}
+.pagedtable td {
+padding: 0 4px 0 4px;
+}
+.pagedtable .even {
+background-color: rgba(140, 140, 140, 0.1);
+}
+.pagedtable-padding-col {
+display: none;
+}
+.pagedtable a {
+-webkit-touch-callout: none;
+-webkit-user-select: none;
+-khtml-user-select: none;
+-moz-user-select: none;
+-ms-user-select: none;
+user-select: none;
+}
+.pagedtable-index-nav {
+cursor: pointer;
+padding: 0 5px 0 5px;
+float: right;
+border: 0;
+}
+.pagedtable-index-nav-disabled {
+cursor: default;
+text-decoration: none;
+color: #999;
+}
+a.pagedtable-index-nav-disabled:hover {
+text-decoration: none;
+color: #999;
+}
+.pagedtable-indexes {
+cursor: pointer;
+float: right;
+border: 0;
+}
+.pagedtable-index-current {
+cursor: default;
+text-decoration: none;
+font-weight: bold;
+color: #333;
+border: 0;
+}
+a.pagedtable-index-current:hover {
+text-decoration: none;
+font-weight: bold;
+color: #333;
+}
+.pagedtable-index {
+width: 30px;
+display: inline-block;
+text-align: center;
+border: 0;
+}
+.pagedtable-index-separator-left {
+display: inline-block;
+color: #333;
+font-size: 9px;
+padding: 0 0 0 0;
+cursor: default;
+}
+.pagedtable-index-separator-right {
+display: inline-block;
+color: #333;
+font-size: 9px;
+padding: 0 4px 0 0;
+cursor: default;
+}
+.pagedtable-footer {
+padding-top: 4px;
+padding-bottom: 5px;
+}
+.pagedtable-not-empty .pagedtable-footer {
+border-top: 2px solid #dddddd;
+}
+.pagedtable-info {
+overflow: hidden;
+color: #999;
+white-space: nowrap;
+text-overflow: ellipsis;
+}
+.pagedtable-header-name {
+overflow: hidden;
+text-overflow: ellipsis;
+}
+.pagedtable-header-type {
+color: #999;
+font-weight: 400;
+}
+.pagedtable-na-cell {
+font-style: italic;
+opacity: 0.3;
+}
+</style>
+<script>// Production steps of ECMA-262, Edition 5, 15.4.4.18
+// Reference: http://es5.github.io/#x15.4.4.18
+if (!Array.prototype.forEach) {
+
+  Array.prototype.forEach = function(callback, thisArg) {
+
+    var T, k;
+
+    if (this === null) {
+      throw new TypeError(' this is null or not defined');
+    }
+
+    // 1. Let O be the result of calling toObject() passing the
+    // |this| value as the argument.
+    var O = Object(this);
+
+    // 2. Let lenValue be the result of calling the Get() internal
+    // method of O with the argument "length".
+    // 3. Let len be toUint32(lenValue).
+    var len = O.length >>> 0;
+
+    // 4. If isCallable(callback) is false, throw a TypeError exception.
+    // See: http://es5.github.com/#x9.11
+    if (typeof callback !== "function") {
+      throw new TypeError(callback + ' is not a function');
+    }
+
+    // 5. If thisArg was supplied, let T be thisArg; else let
+    // T be undefined.
+    if (arguments.length > 1) {
+      T = thisArg;
+    }
+
+    // 6. Let k be 0
+    k = 0;
+
+    // 7. Repeat, while k < len
+    while (k < len) {
+
+      var kValue;
+
+      // a. Let Pk be ToString(k).
+      //    This is implicit for LHS operands of the in operator
+      // b. Let kPresent be the result of calling the HasProperty
+      //    internal method of O with argument Pk.
+      //    This step can be combined with c
+      // c. If kPresent is true, then
+      if (k in O) {
+
+        // i. Let kValue be the result of calling the Get internal
+        // method of O with argument Pk.
+        kValue = O[k];
+
+        // ii. Call the Call internal method of callback with T as
+        // the this value and argument list containing kValue, k, and O.
+        callback.call(T, kValue, k, O);
+      }
+      // d. Increase k by 1.
+      k++;
+    }
+    // 8. return undefined
+  };
+}
+
+// Production steps of ECMA-262, Edition 5, 15.4.4.19
+// Reference: http://es5.github.io/#x15.4.4.19
+if (!Array.prototype.map) {
+
+  Array.prototype.map = function(callback, thisArg) {
+
+    var T, A, k;
+
+    if (this == null) {
+      throw new TypeError(' this is null or not defined');
+    }
+
+    // 1. Let O be the result of calling ToObject passing the |this|
+    //    value as the argument.
+    var O = Object(this);
+
+    // 2. Let lenValue be the result of calling the Get internal
+    //    method of O with the argument "length".
+    // 3. Let len be ToUint32(lenValue).
+    var len = O.length >>> 0;
+
+    // 4. If IsCallable(callback) is false, throw a TypeError exception.
+    // See: http://es5.github.com/#x9.11
+    if (typeof callback !== 'function') {
+      throw new TypeError(callback + ' is not a function');
+    }
+
+    // 5. If thisArg was supplied, let T be thisArg; else let T be undefined.
+    if (arguments.length > 1) {
+      T = thisArg;
+    }
+
+    // 6. Let A be a new array created as if by the expression new Array(len)
+    //    where Array is the standard built-in constructor with that name and
+    //    len is the value of len.
+    A = new Array(len);
+
+    // 7. Let k be 0
+    k = 0;
+
+    // 8. Repeat, while k < len
+    while (k < len) {
+
+      var kValue, mappedValue;
+
+      // a. Let Pk be ToString(k).
+      //   This is implicit for LHS operands of the in operator
+      // b. Let kPresent be the result of calling the HasProperty internal
+      //    method of O with argument Pk.
+      //   This step can be combined with c
+      // c. If kPresent is true, then
+      if (k in O) {
+
+        // i. Let kValue be the result of calling the Get internal
+        //    method of O with argument Pk.
+        kValue = O[k];
+
+        // ii. Let mappedValue be the result of calling the Call internal
+        //     method of callback with T as the this value and argument
+        //     list containing kValue, k, and O.
+        mappedValue = callback.call(T, kValue, k, O);
+
+        // iii. Call the DefineOwnProperty internal method of A with arguments
+        // Pk, Property Descriptor
+        // { Value: mappedValue,
+        //   Writable: true,
+        //   Enumerable: true,
+        //   Configurable: true },
+        // and false.
+
+        // In browsers that support Object.defineProperty, use the following:
+        // Object.defineProperty(A, k, {
+        //   value: mappedValue,
+        //   writable: true,
+        //   enumerable: true,
+        //   configurable: true
+        // });
+
+        // For best browser support, use the following:
+        A[k] = mappedValue;
+      }
+      // d. Increase k by 1.
+      k++;
+    }
+
+    // 9. return A
+    return A;
+  };
+}
+
+var PagedTable = function (pagedTable) {
+  var me = this;
+
+  var source = function(pagedTable) {
+    var sourceElems = [].slice.call(pagedTable.children).filter(function(e) {
+      return e.hasAttribute("data-pagedtable-source");
+    });
+
+    if (sourceElems === null || sourceElems.length !== 1) {
+      throw("A single data-pagedtable-source was not found");
+    }
+
+    return JSON.parse(sourceElems[0].innerHTML);
+  }(pagedTable);
+
+  var options = function(source) {
+    var options = typeof(source.options) !== "undefined" &&
+      source.options !== null ? source.options : {};
+
+    var columns = typeof(options.columns) !== "undefined" ? options.columns : {};
+    var rows = typeof(options.rows) !== "undefined" ? options.rows : {};
+
+    var positiveIntOrNull = function(value) {
+      return parseInt(value) >= 0 ? parseInt(value) : null;
+    };
+
+    return {
+      pages: positiveIntOrNull(options.pages),
+      rows: {
+        min: positiveIntOrNull(rows.min),
+        max: positiveIntOrNull(rows.max),
+        total: positiveIntOrNull(rows.total)
+      },
+      columns: {
+        min: positiveIntOrNull(columns.min),
+        max: positiveIntOrNull(columns.max),
+        total: positiveIntOrNull(columns.total)
+      }
+    };
+  }(source);
+
+  var Measurer = function() {
+
+    // set some default initial values that will get adjusted in runtime
+    me.measures = {
+      padding: 12,
+      character: 8,
+      height: 15,
+      defaults: true
+    };
+
+    me.calculate = function(measuresCell) {
+      if (!me.measures.defaults)
+        return;
+
+      var measuresCellStyle = window.getComputedStyle(measuresCell, null);
+
+      var newPadding = parsePadding(measuresCellStyle.paddingLeft) +
+            parsePadding(measuresCellStyle.paddingRight);
+
+      var sampleString = "ABCDEFGHIJ0123456789";
+      var newCharacter = Math.ceil(measuresCell.clientWidth / sampleString.length);
+
+      if (newPadding <= 0 || newCharacter <= 0)
+        return;
+
+      me.measures.padding = newPadding;
+      me.measures.character = newCharacter;
+      me.measures.height = measuresCell.clientHeight;
+      me.measures.defaults = false;
+    };
+
+    return me;
+  };
+
+  var Page = function(data, options) {
+    var me = this;
+
+    var defaults = {
+      max: 7,
+      rows: 10
+    };
+
+    var totalPages = function() {
+      return Math.ceil(data.length / me.rows);
+    };
+
+    me.number = 0;
+    me.max = options.pages !== null ? options.pages : defaults.max;
+    me.visible = me.max;
+    me.rows = options.rows.min !== null ? options.rows.min : defaults.rows;
+    me.total = totalPages();
+
+    me.setRows = function(newRows) {
+      me.rows = newRows;
+      me.total = totalPages();
+    };
+
+    me.setPageNumber = function(newPageNumber) {
+      if (newPageNumber < 0) newPageNumber = 0;
+      if (newPageNumber >= me.total) newPageNumber = me.total - 1;
+
+      me.number = newPageNumber;
+    };
+
+    me.setVisiblePages = function(visiblePages) {
+      me.visible = Math.min(me.max, visiblePages);
+      me.setPageNumber(me.number);
+    };
+
+    me.getVisiblePageRange = function() {
+      var start = me.number - Math.max(Math.floor((me.visible - 1) / 2), 0);
+      var end = me.number + Math.floor(me.visible / 2) + 1;
+      var pageCount = me.total;
+
+      if (start < 0) {
+        var diffToStart = 0 - start;
+        start += diffToStart;
+        end += diffToStart;
+      }
+
+      if (end > pageCount) {
+        var diffToEnd = end - pageCount;
+        start -= diffToEnd;
+        end -= diffToEnd;
+      }
+
+      start = start < 0 ? 0 : start;
+      end = end >= pageCount ? pageCount : end;
+
+      var first = false;
+      var last = false;
+
+      if (start > 0 && me.visible > 1) {
+        start = start + 1;
+        first = true;
+      }
+
+      if (end < pageCount && me.visible > 2) {
+        end = end - 1;
+        last = true;
+      }
+
+      return {
+        first: first,
+        start: start,
+        end: end,
+        last: last
+      };
+    };
+
+    me.getRowStart = function() {
+      var rowStart = page.number * page.rows;
+      if (rowStart < 0)
+        rowStart = 0;
+
+      return rowStart;
+    };
+
+    me.getRowEnd = function() {
+      var rowStart = me.getRowStart();
+      return Math.min(rowStart + me.rows, data.length);
+    };
+
+    me.getPaddingRows = function() {
+      var rowStart = me.getRowStart();
+      var rowEnd = me.getRowEnd();
+      return data.length > me.rows ? me.rows - (rowEnd - rowStart) : 0;
+    };
+  };
+
+  var Columns = function(data, columns, options) {
+    var me = this;
+
+    me.defaults = {
+      min: 5
+    };
+
+    me.number = 0;
+    me.visible = 0;
+    me.total = columns.length;
+    me.subset = [];
+    me.padding = 0;
+    me.min = options.columns.min !== null ? options.columns.min : me.defaults.min;
+    me.max = options.columns.max !== null ? options.columns.max : null;
+    me.widths = {};
+
+    var widthsLookAhead = Math.max(100, options.rows.min);
+    var paddingColChars = 10;
+
+    me.emptyNames = function() {
+      columns.forEach(function(column) {
+        if (columns.label !== null && columns.label !== "")
+          return false;
+      });
+
+      return true;
+    };
+
+    var parsePadding = function(value) {
+      return parseInt(value) >= 0 ? parseInt(value) : 0;
+    };
+
+    me.calculateWidths = function(measures) {
+      columns.forEach(function(column) {
+        var maxChars = Math.max(
+          column.label.toString().length,
+          column.type.toString().length
+        );
+
+        for (var idxRow = 0; idxRow < Math.min(widthsLookAhead, data.length); idxRow++) {
+          maxChars = Math.max(maxChars, data[idxRow][column.name.toString()].length);
+        }
+
+        me.widths[column.name] = {
+          // width in characters
+          chars: maxChars,
+          // width for the inner html columns
+          inner: maxChars * measures.character,
+          // width adding outer styles like padding
+          outer: maxChars * measures.character + measures.padding
+        };
+      });
+    };
+
+    me.getWidth = function() {
+      var widthOuter = 0;
+      for (var idxCol = 0; idxCol < me.subset.length; idxCol++) {
+        var columnName = me.subset[idxCol].name;
+        widthOuter = widthOuter + me.widths[columnName].outer;
+      }
+
+      widthOuter = widthOuter + me.padding * paddingColChars * measurer.measures.character;
+
+      if (me.hasMoreLeftColumns()) {
+        widthOuter = widthOuter + columnNavigationWidthPX + measurer.measures.padding;
+      }
+
+      if (me.hasMoreRightColumns()) {
+        widthOuter = widthOuter + columnNavigationWidthPX + measurer.measures.padding;
+      }
+
+      return widthOuter;
+    };
+
+    me.updateSlice = function() {
+      if (me.number + me.visible >= me.total)
+        me.number = me.total - me.visible;
+
+      if (me.number < 0) me.number = 0;
+
+      me.subset = columns.slice(me.number, Math.min(me.number + me.visible, me.total));
+
+      me.subset = me.subset.map(function(column) {
+        Object.keys(column).forEach(function(colKey) {
+          column[colKey] = column[colKey] === null ? "" : column[colKey].toString();
+        });
+
+        column.width = null;
+        return column;
+      });
+    };
+
+    me.setVisibleColumns = function(columnNumber, newVisibleColumns, paddingCount) {
+      me.number = columnNumber;
+      me.visible = newVisibleColumns;
+      me.padding = paddingCount;
+
+      me.updateSlice();
+    };
+
+    me.incColumnNumber = function(increment) {
+      me.number = me.number + increment;
+    };
+
+    me.setColumnNumber = function(newNumber) {
+      me.number = newNumber;
+    };
+
+    me.setPaddingCount = function(newPadding) {
+      me.padding = newPadding;
+    };
+
+    me.getPaddingCount = function() {
+      return me.padding;
+    };
+
+    me.hasMoreLeftColumns = function() {
+      return me.number > 0;
+    };
+
+    me.hasMoreRightColumns = function() {
+      return me.number + me.visible < me.total;
+    };
+
+    me.updateSlice(0);
+    return me;
+  };
+
+  var data = source.data;
+  var page = new Page(data, options);
+  var measurer = new Measurer(data, options);
+  var columns = new Columns(data, source.columns, options);
+
+  var table = null;
+  var tableDiv = null;
+  var header = null;
+  var footer = null;
+  var tbody = null;
+
+  // Caches pagedTable.clientWidth, specially for webkit
+  var cachedPagedTableClientWidth = null;
+
+  var onChangeCallbacks = [];
+
+  var clearSelection = function() {
+    if(document.selection && document.selection.empty) {
+      document.selection.empty();
+    } else if(window.getSelection) {
+      var sel = window.getSelection();
+      sel.removeAllRanges();
+    }
+  };
+
+  var columnNavigationWidthPX = 5;
+
+  var renderColumnNavigation = function(increment, backwards) {
+    var arrow = document.createElement("div");
+    arrow.setAttribute("style",
+      "border-top: " + columnNavigationWidthPX + "px solid transparent;" +
+      "border-bottom: " + columnNavigationWidthPX + "px solid transparent;" +
+      "border-" + (backwards ? "right" : "left") + ": " + columnNavigationWidthPX + "px solid;");
+
+    var header = document.createElement("th");
+    header.appendChild(arrow);
+    header.setAttribute("style",
+      "cursor: pointer;" +
+      "vertical-align: middle;" +
+      "min-width: " + columnNavigationWidthPX + "px;" +
+      "width: " + columnNavigationWidthPX + "px;");
+
+    header.onclick = function() {
+      columns.incColumnNumber(backwards ? -1 : increment);
+
+      me.animateColumns(backwards);
+      renderFooter();
+
+      clearSelection();
+      triggerOnChange();
+    };
+
+    return header;
+  };
+
+  var maxColumnWidth = function(width) {
+    var padding = 80;
+    var columnMax = Math.max(cachedPagedTableClientWidth - padding, 0);
+
+    return parseInt(width) > 0 ?
+      Math.min(columnMax, parseInt(width)) + "px" :
+      columnMax + "px";
+  };
+
+  var clearHeader = function() {
+    var thead = pagedTable.querySelectorAll("thead")[0];
+    thead.innerHTML = "";
+  };
+
+  var renderHeader = function(clear) {
+    cachedPagedTableClientWidth = pagedTable.clientWidth;
+
+    var fragment = document.createDocumentFragment();
+
+    header = document.createElement("tr");
+    fragment.appendChild(header);
+
+    if (columns.number > 0)
+      header.appendChild(renderColumnNavigation(-columns.visible, true));
+
+    columns.subset = columns.subset.map(function(columnData) {
+      var column = document.createElement("th");
+      column.setAttribute("align", columnData.align);
+      column.style.textAlign = columnData.align;
+
+      column.style.maxWidth = maxColumnWidth(null);
+      if (columnData.width) {
+        column.style.minWidth =
+          column.style.maxWidth = maxColumnWidth(columnData.width);
+      }
+
+      var columnName = document.createElement("div");
+      columnName.setAttribute("class", "pagedtable-header-name");
+      if (columnData.label === "") {
+        columnName.innerHTML = "&nbsp;";
+      }
+      else {
+        columnName.appendChild(document.createTextNode(columnData.label));
+      }
+      column.appendChild(columnName);
+
+      var columnType = document.createElement("div");
+      columnType.setAttribute("class", "pagedtable-header-type");
+      if (columnData.type === "") {
+        columnType.innerHTML = "&nbsp;";
+      }
+      else {
+        columnType.appendChild(document.createTextNode("<" + columnData.type + ">"));
+      }
+      column.appendChild(columnType);
+
+      header.appendChild(column);
+
+      columnData.element = column;
+
+      return columnData;
+    });
+
+    for (var idx = 0; idx < columns.getPaddingCount(); idx++) {
+      var paddingCol = document.createElement("th");
+      paddingCol.setAttribute("class", "pagedtable-padding-col");
+      header.appendChild(paddingCol);
+    }
+
+    if (columns.number + columns.visible < columns.total)
+      header.appendChild(renderColumnNavigation(columns.visible, false));
+
+    if (typeof(clear) == "undefined" || clear) clearHeader();
+    var thead = pagedTable.querySelectorAll("thead")[0];
+    thead.appendChild(fragment);
+  };
+
+  me.animateColumns = function(backwards) {
+    var thead = pagedTable.querySelectorAll("thead")[0];
+
+    var headerOld = thead.querySelectorAll("tr")[0];
+    var tbodyOld = table.querySelectorAll("tbody")[0];
+
+    me.fitColumns(backwards);
+
+    renderHeader(false);
+
+    header.style.opacity = "0";
+    header.style.transform = backwards ? "translateX(-30px)" : "translateX(30px)";
+    header.style.transition = "transform 200ms linear, opacity 200ms";
+    header.style.transitionDelay = "0";
+
+    renderBody(false);
+
+    if (headerOld) {
+      headerOld.style.position = "absolute";
+      headerOld.style.transform = "translateX(0px)";
+      headerOld.style.opacity = "1";
+      headerOld.style.transition = "transform 100ms linear, opacity 100ms";
+      headerOld.setAttribute("class", "pagedtable-remove-head");
+      if (headerOld.style.transitionEnd) {
+        headerOld.addEventListener("transitionend", function() {
+          var headerOldByClass = thead.querySelector(".pagedtable-remove-head");
+          if (headerOldByClass) thead.removeChild(headerOldByClass);
+        });
+      }
+      else {
+        thead.removeChild(headerOld);
+      }
+    }
+
+    if (tbodyOld) table.removeChild(tbodyOld);
+
+    tbody.style.opacity = "0";
+    tbody.style.transition = "transform 200ms linear, opacity 200ms";
+    tbody.style.transitionDelay = "0ms";
+
+    // force relayout
+    window.getComputedStyle(header).opacity;
+    window.getComputedStyle(tbody).opacity;
+
+    if (headerOld) {
+      headerOld.style.transform = backwards ? "translateX(20px)" : "translateX(-30px)";
+      headerOld.style.opacity = "0";
+    }
+
+    header.style.transform = "translateX(0px)";
+    header.style.opacity = "1";
+
+    tbody.style.opacity = "1";
+  }
+
+  me.onChange = function(callback) {
+    onChangeCallbacks.push(callback);
+  };
+
+  var triggerOnChange = function() {
+    onChangeCallbacks.forEach(function(onChange) {
+      onChange();
+    });
+  };
+
+  var clearBody = function() {
+    if (tbody) {
+      table.removeChild(tbody);
+      tbody = null;
+    }
+  };
+
+  var renderBody = function(clear) {
+    cachedPagedTableClientWidth = pagedTable.clientWidth
+
+    var fragment = document.createDocumentFragment();
+
+    var pageData = data.slice(page.getRowStart(), page.getRowEnd());
+
+    pageData.forEach(function(dataRow, idxRow) {
+      var htmlRow = document.createElement("tr");
+      htmlRow.setAttribute("class", (idxRow % 2 !==0) ? "even" : "odd");
+
+      if (columns.hasMoreLeftColumns())
+        htmlRow.appendChild(document.createElement("td"));
+
+      columns.subset.forEach(function(columnData) {
+        var cellName = columnData.name;
+        var dataCell = dataRow[cellName];
+        var htmlCell = document.createElement("td");
+
+        if (dataCell === "NA") htmlCell.setAttribute("class", "pagedtable-na-cell");
+        if (dataCell === "__NA__") dataCell = "NA";
+
+        var cellText = document.createTextNode(dataCell);
+        htmlCell.appendChild(cellText);
+        if (dataCell.length > 50) {
+          htmlCell.setAttribute("title", dataCell);
+        }
+        htmlCell.setAttribute("align", columnData.align);
+        htmlCell.style.textAlign = columnData.align;
+        htmlCell.style.maxWidth = maxColumnWidth(null);
+        if (columnData.width) {
+          htmlCell.style.minWidth = htmlCell.style.maxWidth = maxColumnWidth(columnData.width);
+        }
+        htmlRow.appendChild(htmlCell);
+      });
+
+      for (var idx = 0; idx < columns.getPaddingCount(); idx++) {
+        var paddingCol = document.createElement("td");
+        paddingCol.setAttribute("class", "pagedtable-padding-col");
+        htmlRow.appendChild(paddingCol);
+      }
+
+      if (columns.hasMoreRightColumns())
+        htmlRow.appendChild(document.createElement("td"));
+
+      fragment.appendChild(htmlRow);
+    });
+
+    for (var idxPadding = 0; idxPadding < page.getPaddingRows(); idxPadding++) {
+      var paddingRow = document.createElement("tr");
+
+      var paddingCellRow = document.createElement("td");
+      paddingCellRow.innerHTML = "&nbsp;";
+      paddingCellRow.setAttribute("colspan", "100%");
+      paddingRow.appendChild(paddingCellRow);
+
+      fragment.appendChild(paddingRow);
+    }
+
+    if (typeof(clear) == "undefined" || clear) clearBody();
+    tbody = document.createElement("tbody");
+    tbody.appendChild(fragment);
+
+    table.appendChild(tbody);
+  };
+
+  var getLabelInfo = function() {
+    var pageStart = page.getRowStart();
+    var pageEnd = page.getRowEnd();
+    var totalRows = data.length;
+
+    var totalRowsLabel = options.rows.total ? options.rows.total : totalRows;
+    var totalRowsLabelFormat = totalRowsLabel.toString().replace(/(\d)(?=(\d\d\d)+(?!\d))/g, '$1,');
+
+    var infoText = (pageStart + 1) + "-" + pageEnd + " of " + totalRowsLabelFormat + " rows";
+    if (totalRows < page.rows) {
+      infoText = totalRowsLabel + " row" + (totalRows != 1 ? "s" : "");
+    }
+    if (columns.total > columns.visible) {
+      var totalColumnsLabel = options.columns.total ? options.columns.total : columns.total;
+
+      infoText = infoText + " | " + (columns.number + 1) + "-" +
+        (Math.min(columns.number + columns.visible, columns.total)) +
+        " of " + totalColumnsLabel + " columns";
+    }
+
+    return infoText;
+  };
+
+  var clearFooter = function() {
+    footer = pagedTable.querySelectorAll("div.pagedtable-footer")[0];
+    footer.innerHTML = "";
+
+    return footer;
+  };
+
+  var createPageLink = function(idxPage) {
+    var pageLink = document.createElement("a");
+    pageLinkClass = idxPage === page.number ? "pagedtable-index pagedtable-index-current" : "pagedtable-index";
+    pageLink.setAttribute("class", pageLinkClass);
+    pageLink.setAttribute("data-page-index", idxPage);
+    pageLink.onclick = function() {
+      page.setPageNumber(parseInt(this.getAttribute("data-page-index")));
+      renderBody();
+      renderFooter();
+
+      triggerOnChange();
+    };
+
+    pageLink.appendChild(document.createTextNode(idxPage + 1));
+
+    return pageLink;
+  }
+
+  var renderFooter = function() {
+    footer = clearFooter();
+
+    var next = document.createElement("a");
+    next.appendChild(document.createTextNode("Next"));
+    next.onclick = function() {
+      page.setPageNumber(page.number + 1);
+      renderBody();
+      renderFooter();
+
+      triggerOnChange();
+    };
+    if (data.length > page.rows) footer.appendChild(next);
+
+    var pageNumbers = document.createElement("div");
+    pageNumbers.setAttribute("class", "pagedtable-indexes");
+
+    var pageRange = page.getVisiblePageRange();
+
+    if (pageRange.first) {
+      var pageLink = createPageLink(0);
+      pageNumbers.appendChild(pageLink);
+
+      var pageSeparator = document.createElement("div");
+      pageSeparator.setAttribute("class", "pagedtable-index-separator-left");
+      pageSeparator.appendChild(document.createTextNode("..."))
+      pageNumbers.appendChild(pageSeparator);
+    }
+
+    for (var idxPage = pageRange.start; idxPage < pageRange.end; idxPage++) {
+      var pageLink = createPageLink(idxPage);
+
+      pageNumbers.appendChild(pageLink);
+    }
+
+    if (pageRange.last) {
+      var pageSeparator = document.createElement("div");
+      pageSeparator.setAttribute("class", "pagedtable-index-separator-right");
+      pageSeparator.appendChild(document.createTextNode("..."))
+      pageNumbers.appendChild(pageSeparator);
+
+      var pageLink = createPageLink(page.total - 1);
+      pageNumbers.appendChild(pageLink);
+    }
+
+    if (data.length > page.rows) footer.appendChild(pageNumbers);
+
+    var previous = document.createElement("a");
+    previous.appendChild(document.createTextNode("Previous"));
+    previous.onclick = function() {
+      page.setPageNumber(page.number - 1);
+      renderBody();
+      renderFooter();
+
+      triggerOnChange();
+    };
+    if (data.length > page.rows) footer.appendChild(previous);
+
+    var infoLabel = document.createElement("div");
+    infoLabel.setAttribute("class", "pagedtable-info");
+    infoLabel.setAttribute("title", getLabelInfo());
+    infoLabel.appendChild(document.createTextNode(getLabelInfo()));
+    footer.appendChild(infoLabel);
+
+    var enabledClass = "pagedtable-index-nav";
+    var disabledClass = "pagedtable-index-nav pagedtable-index-nav-disabled";
+    previous.setAttribute("class", page.number <= 0 ? disabledClass : enabledClass);
+    next.setAttribute("class", (page.number + 1) * page.rows >= data.length ? disabledClass : enabledClass);
+  };
+
+  var measuresCell = null;
+
+  var renderMeasures = function() {
+    var measuresTable = document.createElement("table");
+    measuresTable.style.visibility = "hidden";
+    measuresTable.style.position = "absolute";
+    measuresTable.style.whiteSpace = "nowrap";
+    measuresTable.style.height = "auto";
+    measuresTable.style.width = "auto";
+
+    var measuresRow = document.createElement("tr");
+    measuresTable.appendChild(measuresRow);
+
+    measuresCell = document.createElement("td");
+    var sampleString = "ABCDEFGHIJ0123456789";
+    measuresCell.appendChild(document.createTextNode(sampleString));
+
+    measuresRow.appendChild(measuresCell);
+
+    tableDiv.appendChild(measuresTable);
+  }
+
+  me.init = function() {
+    tableDiv = document.createElement("div");
+    pagedTable.appendChild(tableDiv);
+    var pagedTableClass = data.length > 0 ?
+      "pagedtable pagedtable-not-empty" :
+      "pagedtable pagedtable-empty";
+
+    if (columns.total == 0 || (columns.emptyNames() && data.length == 0)) {
+      pagedTableClass = pagedTableClass + " pagedtable-empty-columns";
+    }
+
+    tableDiv.setAttribute("class", pagedTableClass);
+
+    renderMeasures();
+    measurer.calculate(measuresCell);
+    columns.calculateWidths(measurer.measures);
+
+    table = document.createElement("table");
+    table.setAttribute("cellspacing", "0");
+    table.setAttribute("class", "table table-condensed");
+    tableDiv.appendChild(table);
+
+    table.appendChild(document.createElement("thead"));
+
+    var footerDiv = document.createElement("div");
+    footerDiv.setAttribute("class", "pagedtable-footer");
+    tableDiv.appendChild(footerDiv);
+
+    // if the host has not yet provided horizontal space, render hidden
+    if (tableDiv.clientWidth <= 0) {
+      tableDiv.style.opacity = "0";
+    }
+
+    me.render();
+
+    // retry seizing columns later if the host has not provided space
+    function retryFit() {
+      if (tableDiv.clientWidth <= 0) {
+        setTimeout(retryFit, 100);
+      } else {
+        me.render();
+        triggerOnChange();
+      }
+    }
+    if (tableDiv.clientWidth <= 0) {
+      retryFit();
+    }
+  };
+
+  var registerWidths = function() {
+    columns.subset = columns.subset.map(function(column) {
+      column.width = columns.widths[column.name].inner;
+      return column;
+    });
+  };
+
+  var parsePadding = function(value) {
+    return parseInt(value) >= 0 ? parseInt(value) : 0;
+  };
+
+  me.fixedHeight = function() {
+    return options.rows.max != null;
+  }
+
+  me.fitRows = function() {
+    if (me.fixedHeight())
+      return;
+
+    measurer.calculate(measuresCell);
+
+    var rows = options.rows.min !== null ? options.rows.min : 0;
+    var headerHeight = header !== null && header.offsetHeight > 0 ? header.offsetHeight : 0;
+    var footerHeight = footer !== null && footer.offsetHeight > 0 ? footer.offsetHeight : 0;
+
+    if (pagedTable.offsetHeight > 0) {
+      var availableHeight = pagedTable.offsetHeight - headerHeight - footerHeight;
+      rows = Math.floor((availableHeight) / measurer.measures.height);
+    }
+
+    rows = options.rows.min !== null ? Math.max(options.rows.min, rows) : rows;
+
+    page.setRows(rows);
+  }
+
+  // The goal of this function is to add as many columns as possible
+  // starting from left-to-right, when the right most limit is reached
+  // it tries to add columns from the left as well.
+  //
+  // When startBackwards is true columns are added from right-to-left
+  me.fitColumns = function(startBackwards) {
+    measurer.calculate(measuresCell);
+    columns.calculateWidths(measurer.measures);
+
+    if (tableDiv.clientWidth > 0) {
+      tableDiv.style.opacity = 1;
+    }
+
+    var visibleColumns = tableDiv.clientWidth <= 0 ? Math.max(columns.min, 1) : 1;
+    var columnNumber = columns.number;
+    var paddingCount = 0;
+
+    // track a list of added columns as we build the visible ones to allow us
+    // to remove columns when they don't fit anymore.
+    var columnHistory = [];
+
+    var lastTableHeight = 0;
+    var backwards = startBackwards;
+
+    var tableDivStyle = window.getComputedStyle(tableDiv, null);
+    var tableDivPadding = parsePadding(tableDivStyle.paddingLeft) +
+      parsePadding(tableDivStyle.paddingRight);
+
+    var addPaddingCol = false;
+    var currentWidth = 0;
+
+    while (true) {
+      columns.setVisibleColumns(columnNumber, visibleColumns, paddingCount);
+      currentWidth = columns.getWidth();
+
+      if (tableDiv.clientWidth - tableDivPadding < currentWidth) {
+        break;
+      }
+
+      columnHistory.push({
+        columnNumber: columnNumber,
+        visibleColumns: visibleColumns,
+        paddingCount: paddingCount
+      });
+
+      if (columnHistory.length > 100) {
+        console.error("More than 100 tries to fit columns, aborting");
+        break;
+      }
+
+      if (columns.max !== null &&
+        columns.visible + columns.getPaddingCount() >= columns.max) {
+        break;
+      }
+
+      // if we run out of right-columns
+      if (!backwards && columnNumber + columns.visible >= columns.total) {
+        // if we started adding right-columns, try adding left-columns
+        if (!startBackwards && columnNumber > 0) {
+          backwards = true;
+        }
+        else if (columns.min === null || visibleColumns + columns.getPaddingCount() >= columns.min) {
+          break;
+        }
+        else {
+          paddingCount = paddingCount + 1;
+        }
+      }
+
+      // if we run out of left-columns
+      if (backwards && columnNumber == 0) {
+        // if we started adding left-columns, try adding right-columns
+        if (startBackwards && columnNumber + columns.visible < columns.total) {
+          backwards = false;
+        }
+        else if (columns.min === null || visibleColumns + columns.getPaddingCount() >= columns.min) {
+          break;
+        }
+        else {
+          paddingCount = paddingCount + 1;
+        }
+      }
+
+      // when moving backwards try fitting left columns first
+      if (backwards && columnNumber > 0) {
+        columnNumber = columnNumber - 1;
+      }
+
+      if (columnNumber + visibleColumns < columns.total) {
+        visibleColumns = visibleColumns + 1;
+      }
+    }
+
+    var lastRenderableColumn = {
+        columnNumber: columnNumber,
+        visibleColumns: visibleColumns,
+        paddingCount: paddingCount
+    };
+
+    if (columnHistory.length > 0) {
+      lastRenderableColumn = columnHistory[columnHistory.length - 1];
+    }
+
+    columns.setVisibleColumns(
+      lastRenderableColumn.columnNumber,
+      lastRenderableColumn.visibleColumns,
+      lastRenderableColumn.paddingCount);
+
+    if (pagedTable.offsetWidth > 0) {
+      page.setVisiblePages(Math.max(Math.ceil(1.0 * (pagedTable.offsetWidth - 250) / 40), 2));
+    }
+
+    registerWidths();
+  };
+
+  me.fit = function(startBackwards) {
+    me.fitRows();
+    me.fitColumns(startBackwards);
+  }
+
+  me.render = function() {
+    me.fitColumns(false);
+
+    // render header/footer to measure height accurately
+    renderHeader();
+    renderFooter();
+
+    me.fitRows();
+    renderBody();
+
+    // re-render footer to match new rows
+    renderFooter();
+  }
+
+  var resizeLastWidth = -1;
+  var resizeLastHeight = -1;
+  var resizeNewWidth = -1;
+  var resizeNewHeight = -1;
+  var resizePending = false;
+
+  me.resize = function(newWidth, newHeight) {
+
+    function resizeDelayed() {
+      resizePending = false;
+
+      if (
+        (resizeNewWidth !== resizeLastWidth) ||
+        (!me.fixedHeight() && resizeNewHeight !== resizeLastHeight)
+      ) {
+        resizeLastWidth = resizeNewWidth;
+        resizeLastHeight = resizeNewHeight;
+
+        setTimeout(resizeDelayed, 200);
+        resizePending = true;
+      } else {
+        me.render();
+        triggerOnChange();
+
+        resizeLastWidth = -1;
+        resizeLastHeight = -1;
+      }
+    }
+
+    resizeNewWidth = newWidth;
+    resizeNewHeight = newHeight;
+
+    if (!resizePending) resizeDelayed();
+  };
+};
+
+var PagedTableDoc;
+(function (PagedTableDoc) {
+  var allPagedTables = [];
+
+  PagedTableDoc.initAll = function() {
+    allPagedTables = [];
+
+    var pagedTables = [].slice.call(document.querySelectorAll('[data-pagedtable="false"],[data-pagedtable=""]'));
+    pagedTables.forEach(function(pagedTable, idx) {
+      pagedTable.setAttribute("data-pagedtable", "true");
+      pagedTable.setAttribute("pagedtable-page", 0);
+      pagedTable.setAttribute("class", "pagedtable-wrapper");
+
+      var pagedTableInstance = new PagedTable(pagedTable);
+      pagedTableInstance.init();
+
+      allPagedTables.push(pagedTableInstance);
+    });
+  };
+
+  PagedTableDoc.resizeAll = function() {
+    allPagedTables.forEach(function(pagedTable) {
+      pagedTable.render();
+    });
+  };
+
+  window.addEventListener("resize", PagedTableDoc.resizeAll);
+
+  return PagedTableDoc;
+})(PagedTableDoc || (PagedTableDoc = {}));
+
+window.onload = function() {
+  PagedTableDoc.initAll();
+};
+</script>
 
 
 <style type="text/css">code{white-space: pre;}</style>
@@ -161,7 +1432,15 @@ Ravichandran</h4>
 <li><a href="#introduction" id="toc-introduction"><span class="toc-section-number">1</span> Introduction</a></li>
 <li><a href="#import-library" id="toc-import-library"><span class="toc-section-number">2</span> Import Library</a></li>
 <li><a href="#load-data-set" id="toc-load-data-set"><span class="toc-section-number">3</span> Load Data Set</a></li>
-<li><a href="#data-analyse" id="toc-data-analyse"><span class="toc-section-number">4</span> Data Analyse</a></li>
+<li><a href="#data-analyse" id="toc-data-analyse"><span class="toc-section-number">4</span> Data Analyse</a>
+<ul>
+<li><a href="#inspection" id="toc-inspection"><span class="toc-section-number">4.1</span> Inspection</a></li>
+<li><a href="#data-cleaning-and-preprocessing" id="toc-data-cleaning-and-preprocessing"><span class="toc-section-number">4.2</span> Data Cleaning and
+Preprocessing</a>
+<ul>
+<li><a href="#imputing-missing-values" id="toc-imputing-missing-values"><span class="toc-section-number">4.2.1</span> Imputing Missing Values</a></li>
+</ul></li>
+</ul></li>
 <li><a href="#linear-model" id="toc-linear-model"><span class="toc-section-number">5</span> Linear Model</a></li>
 <li><a href="#generalized-linear-models" id="toc-generalized-linear-models"><span class="toc-section-number">6</span> Generalized Linear Models</a></li>
 <li><a href="#generalized-additive-model" id="toc-generalized-additive-model"><span class="toc-section-number">7</span> Generalized Additive Model</a></li>
@@ -195,19 +1474,81 @@ patients grappling with various critical illnesses.</p>
 <span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a><span class="co">#library(mgcv)         # Fitting GAM</span></span>
 <span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a><span class="co">#library(caret)</span></span>
 <span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a><span class="co">#library(neuralnet)</span></span>
-<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a><span class="co">#library(e1071)</span></span></code></pre></div>
+<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a><span class="co">#library(e1071)</span></span>
+<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a><span class="fu">library</span>(reshape2)</span></code></pre></div>
 </div>
 <div id="load-data-set" class="section level1" number="3">
 <h1><span class="header-section-number">3</span> Load Data Set</h1>
-<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>data <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">&quot;support2.csv&quot;</span>, <span class="at">header =</span> <span class="cn">TRUE</span>, <span class="at">sep =</span> <span class="st">&quot;,&quot;</span>)</span></code></pre></div>
+<p>According to the HBiostat Repository (<a href="https://hbiostat.org/data/repo/supportdesc" class="uri">https://hbiostat.org/data/repo/supportdesc</a>, Professor
+Frank Harrell) the following default values have been found to be useful
+in imputing missing baseline physiologic data:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Baseline Variable</th>
+<th>short</th>
+<th>Default Value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Serum albumin</td>
+<td>alb</td>
+<td>3.5</td>
+</tr>
+<tr class="even">
+<td>PaO2/FiO2 ratio</td>
+<td>pafi</td>
+<td>333.3</td>
+</tr>
+<tr class="odd">
+<td>Bilirubin</td>
+<td>bili</td>
+<td>1.01</td>
+</tr>
+<tr class="even">
+<td>Serum Creatinine</td>
+<td>crea</td>
+<td>1.01</td>
+</tr>
+<tr class="odd">
+<td>Blood urea nitrogen</td>
+<td>bun</td>
+<td>6.51</td>
+</tr>
+<tr class="even">
+<td>White blood count</td>
+<td>wblc</td>
+<td>9</td>
+</tr>
+<tr class="odd">
+<td>Urine output</td>
+<td>urine</td>
+<td>2502</td>
+</tr>
+</tbody>
+</table>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>data <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">&quot;support2.csv&quot;</span>, <span class="at">header =</span> <span class="cn">TRUE</span>, <span class="at">sep =</span> <span class="st">&quot;,&quot;</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a><span class="co"># Create a named vector with default values for each variable</span></span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>default_values <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>    <span class="at">alb =</span> <span class="fl">3.5</span>, <span class="at">pafi =</span> <span class="fl">333.3</span>, <span class="at">bili =</span> <span class="fl">1.01</span>,</span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a>    <span class="at">crea =</span> <span class="fl">1.01</span>, <span class="at">bun =</span> <span class="fl">6.51</span>, <span class="at">wblc =</span> <span class="fl">9.0</span>, <span class="at">urine =</span> <span class="dv">2502</span></span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a>)</span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a></span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a><span class="co"># Loop through the vector to replace missing value</span></span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a><span class="cf">for</span> (var <span class="cf">in</span> <span class="fu">names</span>(default_values)) {</span>
+<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a>    data[[var]][<span class="fu">is.na</span>(data[[var]])] <span class="ot">&lt;-</span> default_values[var]</span>
+<span id="cb2-12"><a href="#cb2-12" tabindex="-1"></a>}</span></code></pre></div>
 </div>
 <div id="data-analyse" class="section level1" number="4">
 <h1><span class="header-section-number">4</span> Data Analyse</h1>
+<div id="inspection" class="section level2" number="4.1">
+<h2><span class="header-section-number">4.1</span> Inspection</h2>
 <p>First in line was Samuel, armed with a passion for data analysis. He
 delved into the dataset, exploring each variable – from demographic
-idetails like age, sex, and education level to disease categories and
-severity indicators. He meticulously examined missing values, ensuring a
-clean and reliable dataset for further analysis.</p>
+details like age, sex, and education level to disease categories and
+severity indicators.</p>
 <pre><code>## &#39;data.frame&#39;:    9105 obs. of  47 variables:
 ##  $ age     : num  62.8 60.3 52.7 42.4 79.9 ...
 ##  $ death   : int  0 1 1 1 0 1 1 1 1 1 ...
@@ -243,20 +1584,23 @@ clean and reliable dataset for further analysis.</p>
 ##  $ hrt     : num  69 112 88 88 112 101 120 100 56 94 ...
 ##  $ resp    : int  22 34 28 32 20 44 28 26 20 20 ...
 ##  $ temp    : num  36 34.6 37.4 35 37.9 ...
-##  $ pafi    : num  388 98 232 NA 173 ...
-##  $ alb     : num  1.8 NA NA NA NA ...
-##  $ bili    : num  0.2 NA 2.2 NA NA ...
+##  $ pafi    : num  388 98 232 333 173 ...
+##  $ alb     : num  1.8 3.5 3.5 3.5 3.5 ...
+##  $ bili    : num  0.2 1.01 2.2 1.01 1.01 ...
 ##  $ crea    : num  1.2 5.5 2 0.8 0.8 ...
 ##  $ sod     : int  141 132 134 139 143 140 132 139 143 139 ...
 ##  $ ph      : num  7.46 7.25 7.46 NA 7.51 ...
 ##  $ glucose : num  NA NA NA NA NA NA NA NA NA NA ...
-##  $ bun     : num  NA NA NA NA NA NA NA NA NA NA ...
-##  $ urine   : num  NA NA NA NA NA NA NA NA NA NA ...
+##  $ bun     : num  6.51 6.51 6.51 6.51 6.51 6.51 6.51 6.51 6.51 6.51 ...
+##  $ urine   : num  2502 2502 2502 2502 2502 ...
 ##  $ adlp    : int  7 NA 1 0 NA NA 0 NA NA 0 ...
 ##  $ adls    : int  7 1 0 0 2 1 1 0 7 NA ...
 ##  $ sfdm2   : chr  &quot;&quot; &quot;&lt;2 mo. follow-up&quot; &quot;&lt;2 mo. follow-up&quot; &quot;no(M2 and SIP pres)&quot; ...
-##  $ adlsc   : num  7 1 0 0 2 ...
-## List of 14
+##  $ adlsc   : num  7 1 0 0 2 ...</code></pre>
+<p>After Inspecting closely, We see that some categorical variables
+datatype are not factors eg.
+<code>$ sex : chr  &quot;male&quot; &quot;female&quot;</code></p>
+<pre><code>## List of 14
 ##  $ sex     : chr [1:2] &quot;male&quot; &quot;female&quot;
 ##  $ death   : int [1:2] 0 1
 ##  $ hospdead: int [1:2] 0 1
@@ -270,8 +1614,14 @@ clean and reliable dataset for further analysis.</p>
 ##  $ dnr     : chr [1:4] &quot;no dnr&quot; &quot;&quot; &quot;dnr after sadm&quot; &quot;dnr before sadm&quot;
 ##  $ adlp    : int [1:9] 7 NA 1 0 2 3 5 6 4
 ##  $ adls    : int [1:9] 7 1 0 2 NA 5 4 6 3
-##  $ sfdm2   : chr [1:6] &quot;&quot; &quot;&lt;2 mo. follow-up&quot; &quot;no(M2 and SIP pres)&quot; &quot;SIP&gt;=30&quot; ...
-## &#39;data.frame&#39;:    9105 obs. of  14 variables:
+##  $ sfdm2   : chr [1:6] &quot;&quot; &quot;&lt;2 mo. follow-up&quot; &quot;no(M2 and SIP pres)&quot; &quot;SIP&gt;=30&quot; ...</code></pre>
+</div>
+<div id="data-cleaning-and-preprocessing" class="section level2" number="4.2">
+<h2><span class="header-section-number">4.2</span> Data Cleaning and
+Preprocessing</h2>
+<p>He meticulously examined missing values, ensuring a clean and
+reliable dataset for further analysis.</p>
+<pre><code>## &#39;data.frame&#39;:    9105 obs. of  14 variables:
 ##  $ sex     : Factor w/ 2 levels &quot;female&quot;,&quot;male&quot;: 2 1 1 1 1 2 2 2 2 1 ...
 ##  $ death   : Factor w/ 2 levels &quot;0&quot;,&quot;1&quot;: 1 2 2 2 1 2 2 2 2 2 ...
 ##  $ hospdead: Factor w/ 2 levels &quot;0&quot;,&quot;1&quot;: 1 2 1 1 1 2 1 1 1 1 ...
@@ -281,13 +1631,83 @@ clean and reliable dataset for further analysis.</p>
 ##  $ race    : Factor w/ 6 levels &quot;&quot;,&quot;asian&quot;,&quot;black&quot;,..: 5 6 6 6 6 6 6 6 3 4 ...
 ##  $ diabetes: Factor w/ 2 levels &quot;0&quot;,&quot;1&quot;: 1 1 1 1 1 1 1 2 1 1 ...
 ##  $ dementia: Factor w/ 2 levels &quot;0&quot;,&quot;1&quot;: 1 1 1 1 1 1 1 1 2 1 ...
-##  $ ca      : chr  &quot;metastatic&quot; &quot;no&quot; &quot;no&quot; &quot;metastatic&quot; ...
+##  $ ca      : Ord.factor w/ 3 levels &quot;no&quot;&lt;&quot;yes&quot;&lt;&quot;metastatic&quot;: 3 1 2 3 1 2 3 1 2 3 ...
 ##  $ dnr     : chr  &quot;no dnr&quot; &quot;&quot; &quot;no dnr&quot; &quot;no dnr&quot; ...
 ##  $ adlp    : Ord.factor w/ 7 levels &quot;1&quot;&lt;&quot;2&quot;&lt;&quot;3&quot;&lt;&quot;4&quot;&lt;..: 7 NA 1 NA NA NA NA NA NA NA ...
 ##  $ adls    : Ord.factor w/ 7 levels &quot;1&quot;&lt;&quot;2&quot;&lt;&quot;3&quot;&lt;&quot;4&quot;&lt;..: 7 1 NA NA 2 1 1 NA 7 NA ...
 ##  $ sfdm2   : Ord.factor w/ 5 levels &quot;no(M2 and SIP pres)&quot;&lt;..: NA 5 5 1 1 5 1 NA NA NA ...</code></pre>
-<p>Samuel’s keen eye uncovered patterns and relationships, providing a
-solid foundation for the subsequent stages of their project.</p>
+<p>We have only 184 complete cases <em>(rows with no missing
+values)</em> out of 9105 rows. This is a very small number of complete
+cases. In order to make the dataset usable, we will have to find
+identify which variables have the most missing values and drop them from
+the dataset.<br />
+Variables with the most missing values are:</p>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["values"],"name":[1],"type":["dbl"],"align":["right"]},{"label":["ind"],"name":[2],"type":["fct"],"align":["left"]}],"data":[{"1":"7490","2":"adlp"},{"1":"5975","2":"adls"},{"1":"4500","2":"glucose"},{"1":"3475","2":"totmcst"},{"1":"2982","2":"income"},{"1":"2284","2":"ph"},{"1":"1649","2":"prg2m"},{"1":"1634","2":"edu"},{"1":"1633","2":"prg6m"},{"1":"1400","2":"sfdm2"},{"1":"888","2":"totcst"},{"1":"172","2":"charges"},{"1":"82","2":"avtisst"},{"1":"30","2":"dnrday"},{"1":"1","2":"scoma"},{"1":"1","2":"sps"},{"1":"1","2":"aps"},{"1":"1","2":"surv2m"},{"1":"1","2":"surv6m"},{"1":"1","2":"meanbp"},{"1":"1","2":"hrt"},{"1":"1","2":"resp"},{"1":"1","2":"temp"},{"1":"1","2":"sod"},{"1":"0","2":"age"},{"1":"0","2":"death"},{"1":"0","2":"sex"},{"1":"0","2":"hospdead"},{"1":"0","2":"slos"},{"1":"0","2":"d.time"},{"1":"0","2":"dzgroup"},{"1":"0","2":"dzclass"},{"1":"0","2":"num.co"},{"1":"0","2":"race"},{"1":"0","2":"hday"},{"1":"0","2":"diabetes"},{"1":"0","2":"dementia"},{"1":"0","2":"ca"},{"1":"0","2":"dnr"},{"1":"0","2":"wblc"},{"1":"0","2":"pafi"},{"1":"0","2":"alb"},{"1":"0","2":"bili"},{"1":"0","2":"crea"},{"1":"0","2":"bun"},{"1":"0","2":"urine"},{"1":"0","2":"adlsc"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+<p>After removing the variables with more than 50% missing values
+<em>(adlp, adls, glucose)</em>, we still have only 5558 complete
+cases.<br />
+To determine further, which variables to drop, we will create a
+correlation matrix and identify the variables with high correlation.</p>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":[""],"name":["_rn_"],"type":[""],"align":["left"]},{"label":["Var1"],"name":[1],"type":["fct"],"align":["left"]},{"label":["Var2"],"name":[2],"type":["fct"],"align":["left"]},{"label":["value"],"name":[3],"type":["dbl"],"align":["right"]}],"data":[{"1":"surv6m","2":"surv2m","3":"0.9632486","_rn_":"398"},{"1":"totmcst","2":"totcst","3":"0.9610887","_rn_":"233"},{"1":"prg6m","2":"prg2m","3":"0.9017719","_rn_":"497"},{"1":"dnrday","2":"slos","3":"0.8874880","_rn_":"50"},{"1":"totcst","2":"charges","3":"0.8377944","_rn_":"200"},{"1":"totmcst","2":"charges","3":"0.8273386","_rn_":"201"},{"1":"totcst","2":"slos","3":"0.8163512","_rn_":"40"},{"1":"totmcst","2":"slos","3":"0.7817563","_rn_":"41"},{"1":"aps","2":"sps","3":"0.7668539","_rn_":"332"},{"1":"dnrday","2":"totcst","3":"0.7487821","_rn_":"242"},{"1":"surv2m","2":"sps","3":"-0.7380326","_rn_":"333"},{"1":"dnrday","2":"totmcst","3":"0.7236872","_rn_":"274"},{"1":"surv6m","2":"sps","3":"-0.6712076","_rn_":"334"},{"1":"surv2m","2":"aps","3":"-0.6060950","_rn_":"365"},{"1":"charges","2":"slos","3":"0.5861088","_rn_":"39"},{"1":"surv2m","2":"scoma","3":"-0.5836093","_rn_":"173"},{"1":"prg2m","2":"surv2m","3":"0.5635107","_rn_":"400"},{"1":"aps","2":"avtisst","3":"0.5628255","_rn_":"300"},{"1":"dnrday","2":"charges","3":"0.5508429","_rn_":"210"},{"1":"bun","2":"crea","3":"0.5485817","_rn_":"862"},{"1":"prg2m","2":"surv6m","3":"0.5369790","_rn_":"432"},{"1":"prg6m","2":"surv6m","3":"0.5362605","_rn_":"433"},{"1":"avtisst","2":"totcst","3":"0.5337953","_rn_":"234"},{"1":"avtisst","2":"totmcst","3":"0.5320544","_rn_":"266"},{"1":"sps","2":"avtisst","3":"0.5287620","_rn_":"299"},{"1":"hday","2":"charges","3":"0.5240881","_rn_":"207"},{"1":"prg6m","2":"surv2m","3":"0.5193627","_rn_":"401"},{"1":"surv6m","2":"aps","3":"-0.5175719","_rn_":"366"},{"1":"surv6m","2":"scoma","3":"-0.4957141","_rn_":"174"},{"1":"hday","2":"totcst","3":"0.4809806","_rn_":"239"},{"1":"avtisst","2":"charges","3":"0.4694658","_rn_":"202"},{"1":"surv2m","2":"avtisst","3":"-0.4508492","_rn_":"301"},{"1":"surv6m","2":"d.time","3":"0.4443947","_rn_":"78"},{"1":"prg6m","2":"d.time","3":"0.4372611","_rn_":"81"},{"1":"hday","2":"totmcst","3":"0.4359186","_rn_":"271"},{"1":"prg2m","2":"aps","3":"-0.4149175","_rn_":"368"},{"1":"prg2m","2":"sps","3":"-0.4100283","_rn_":"336"},{"1":"surv2m","2":"d.time","3":"0.4057327","_rn_":"77"},{"1":"prg2m","2":"d.time","3":"0.3988634","_rn_":"80"},{"1":"prg2m","2":"scoma","3":"-0.3914198","_rn_":"176"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+<p>We find that the following variables are highly correlated with other
+variables:</p>
+<ol style="list-style-type: decimal">
+<li>sur6m : surv2m (model predicted 6 months and 2 months survival
+estimates for patient ) - (Cor = 0.96)</li>
+<li>totcst : charges (cost to charge ratio : total charges) - (Cor =
+0.83)</li>
+<li>aps (APACHE III day 3 physiology score : SUPPORT physiology score) :
+sps (predicted SUPPORT physiology score on day 3 ) - (Cor = 0.77)</li>
+<li>aps : avtisst (Average TISS score - quantifies type and number of
+intensive care treatments. ) - (Cor = 0.59)</li>
+<li>sfdm2 (Level of functional disability of the patient in a 1-5 scale.
+(Naturally correlated with other physiological scores ))</li>
+</ol>
+<p>Identify out which other variables are also Survival estimates and
+check their respective number of missing values.</p>
+<ol style="list-style-type: decimal">
+<li>prg2m : Physician’s 2-month survival estimate for patient.</li>
+<li>prg6m : Physician’s 6-month survival estimate for patient.</li>
+<li>prg2m : surv2m - (Cor = 0.55)</li>
+<li>prg6m : surv6m - (Cor = 0.53)</li>
+</ol>
+<div id="imputing-missing-values" class="section level3" number="4.2.1">
+<h3><span class="header-section-number">4.2.1</span> Imputing Missing
+Values</h3>
+<p>Impute other variables:</p>
+<ul>
+<li>income</li>
+<li>edu</li>
+<li>ph</li>
+</ul>
+<p>We will drop the ‘rows’ with missing values for the following
+variables:</p>
+<ol style="list-style-type: decimal">
+<li>charges</li>
+<li>dnrday</li>
+<li>scoma</li>
+<li>aps</li>
+<li>surv2m</li>
+<li>meanbp</li>
+<li>hrt</li>
+</ol>
+Samuel’s keen eye uncovered patterns and relationships, providing a
+solid foundation for the subsequent stages of their project.
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["values"],"name":[1],"type":["dbl"],"align":["right"]},{"label":["ind"],"name":[2],"type":["fct"],"align":["left"]}],"data":[{"1":"3475","2":"totmcst"},{"1":"172","2":"charges"},{"1":"30","2":"dnrday"},{"1":"1","2":"scoma"},{"1":"1","2":"aps"},{"1":"1","2":"surv2m"},{"1":"1","2":"meanbp"},{"1":"1","2":"hrt"},{"1":"1","2":"resp"},{"1":"1","2":"temp"},{"1":"1","2":"sod"},{"1":"0","2":"age"},{"1":"0","2":"death"},{"1":"0","2":"sex"},{"1":"0","2":"hospdead"},{"1":"0","2":"slos"},{"1":"0","2":"d.time"},{"1":"0","2":"dzgroup"},{"1":"0","2":"dzclass"},{"1":"0","2":"num.co"},{"1":"0","2":"edu"},{"1":"0","2":"income"},{"1":"0","2":"race"},{"1":"0","2":"hday"},{"1":"0","2":"diabetes"},{"1":"0","2":"dementia"},{"1":"0","2":"ca"},{"1":"0","2":"dnr"},{"1":"0","2":"wblc"},{"1":"0","2":"pafi"},{"1":"0","2":"alb"},{"1":"0","2":"bili"},{"1":"0","2":"crea"},{"1":"0","2":"ph"},{"1":"0","2":"bun"},{"1":"0","2":"urine"},{"1":"0","2":"adlsc"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+</div>
+</div>
 </div>
 <div id="linear-model" class="section level1" number="5">
 <h1><span class="header-section-number">5</span> Linear Model</h1>
@@ -297,7 +1717,6 @@ precision, took the lead. He meticulously crafted a model that
 encapsulated the essence of the dataset, laying the groundwork for
 predicting survival rates based on physiological and demographic
 features.</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="co">#source(&quot;LM.R&quot;)</span></span></code></pre></div>
 </div>
 <div id="generalized-linear-models" class="section level1" number="6">
 <h1><span class="header-section-number">6</span> Generalized Linear
@@ -308,8 +1727,6 @@ deeper understanding, delved into the realm of Generalized Linear Models
 data, bringing a new dimension to their predictive capabilities. The
 exploration continued with the family set to Binomial, unraveling the
 mysteries of binary outcomes.</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="co">#source(&quot;GLM Poisson.R&quot;)</span></span></code></pre></div>
-<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="co">#source(&quot;GLM Binomial.R&quot;)</span></span></code></pre></div>
 </div>
 <div id="generalized-additive-model" class="section level1" number="7">
 <h1><span class="header-section-number">7</span> Generalized Additive
@@ -319,7 +1736,6 @@ Pradip, with an affinity for complexity, introduced a Generalized
 Additive Model (GAM). This allowed them to capture non-linear
 relationships, providing a more nuanced understanding of the factors
 influencing patient survival.</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="co">#source(&quot;GAM.R&quot;)</span></span></code></pre></div>
 </div>
 <div id="neural-networks" class="section level1" number="8">
 <h1><span class="header-section-number">8</span> Neural Networks</h1>
@@ -328,7 +1744,6 @@ for the next leg – the realm of Neural Networks. With an aptitude for
 the intricacies of artificial intelligence, he crafted a network that
 could learn and adapt, pushing the boundaries of predictive
 accuracy.</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="co">#source(&quot;NN.R&quot;)</span></span></code></pre></div>
 </div>
 <div id="support-vector-machine" class="section level1" number="9">
 <h1><span class="header-section-number">9</span> Support Vector
@@ -337,7 +1752,6 @@ Machine</h1>
 Machine (SVM). As the data danced through hyperplanes, Pradip fine-tuned
 the model to discern the subtle boundaries between survival and
 adversity.</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="co">#source(&quot;SM.R&quot;)</span></span></code></pre></div>
 </div>
 <div id="optimization-problem" class="section level1" number="10">
 <h1><span class="header-section-number">10</span> Optimization
