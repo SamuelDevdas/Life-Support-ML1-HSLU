@@ -11,7 +11,9 @@ head(df_support, 3)
 str(df_support)
 dim(df_support)
 
-### After Inspecting closely, We see that for many categorical variables', the datatype are not 'Factor' eg. $ sex : chr  "male" "female" etc.
+### After Inspecting closely, We see that for many categorical variables', 
+# the datatype are not 'Factor' eg. $ sex : chr  "male" "female" etc.
+
 ### Data Cleaning and Preprocessing
 # Identify and Group the categorical variables as categories of interest
 cat_interest <- c("death", "sex", "hospdead", "dzgroup", "dzclass", "income", "race", "diabetes", "dementia", "ca", "dnr", "adlp", "adls", "sfdm2")
@@ -32,7 +34,8 @@ df_support$dzgroup <- factor(df_support$dzgroup)
 
 df_support$dzclass <- factor(df_support$dzclass)
 
-df_support$income <- factor(df_support$income, ordered = TRUE, levels = c("under $11k", "$11-$25k", "$25-$50k", ">$50k"))
+df_support$income <- factor(df_support$income, ordered = TRUE, 
+                            levels = c("under $11k", "$11-$25k", "$25-$50k", ">$50k"))
 
 df_support$race <- factor(df_support$race)
 
@@ -49,7 +52,9 @@ df_support$adlp <- factor(df_support$adlp, ordered = TRUE, levels = c(1, 2, 3, 4
 
 df_support$adls <- factor(df_support$adls, ordered = TRUE, levels = c(1, 2, 3, 4, 5, 6, 7))
 
-df_support$sfdm2 <- factor(df_support$sfdm2, ordered = TRUE, levels = c("no(M2 and SIP pres)", "adl>=4 (>=5 if sur)", "SIP>=30", "Coma or Intub", "<2 mo. follow-up"))
+df_support$sfdm2 <- factor(df_support$sfdm2, ordered = TRUE, 
+                           levels = c("no(M2 and SIP pres)", "adl>=4 (>=5 if sur)", 
+                                      "SIP>=30", "Coma or Intub", "<2 mo. follow-up"))
 
 # Check structure of dataset to confirm changes
 str(df_support[cat_interest])
@@ -61,7 +66,9 @@ num_complete_cases
 
 dim(df_support)
 
-# We have only 106 complete cases (rows with no missing values) out of 9105 rows. This is a very small number of complete cases. In order to make the dataset usable, we will have to find identify which variables have the most missing values and drop them from the dataset.
+# We have only 106 complete cases (rows with no missing values) out of 9105 rows. 
+# This is a very small number of complete cases. In order to make the dataset usable,
+# we will have to find identify which variables have the most missing values and drop them from the dataset.
 
 # Check for Missing Values in each column and sort in descending order
 
@@ -89,13 +96,15 @@ na_counts_col[1:15]
 # And 'column_to_drop' is the name of the column you want to drop
 df_updated_mis <- subset(df_support, select = -c(adlp, adls, totmcst, glucose))
 
-# Recheck the total number of complete cases (Rows with no missing values) after dropping variables with high missing values
+# Recheck the total number of complete cases (Rows with no missing values) after
+# dropping variables with high missing values
 num_complete_cases <- sum(complete.cases(df_updated_mis))
 num_complete_cases
 
 # Still, we have only 857 complete cases. 
 
-# To determine further, which variables to drop, we will create a correlation matrix and identify the variables with high correlation.
+# To determine further, which variables to drop, 
+# we will create a correlation matrix and identify the variables with high correlation.
 # Create df with only numeric columns for creating a correlation matrix
 
 numeric_columns <- sapply(df_support, is.numeric)
@@ -144,7 +153,8 @@ na_counts_cor <- sort(na_counts_cor, decreasing = TRUE)
 
 na_counts_cor
 
-# We drop the 'redundant' and with 'high missing values' variables ie. prg2m, prg6m and surv6m, totcst, sps, avtisst
+# We drop the 'redundant' and with 'high missing values' variables 
+# ie. prg2m, prg6m and surv6m, totcst, sps, avtisst
 # And 'column_to_drop' is the name of the column you want to drop
 
 df_updated_mis <- subset(df_updated_mis, select = -c(prg2m, prg6m, surv6m, totcst, sps, avtisst, sfdm2))
@@ -163,7 +173,8 @@ na_counts_col[1:15]
 
 ### Imputing Missing Values
 
-# According to the HBiostat Repository (https://hbiostat.org/data/repo/supportdesc, Professor Frank Harrell) the following default values have been found to be useful in imputing missing baseline physiologic data:
+# According to the HBiostat Repository (https://hbiostat.org/data/repo/supportdesc, 
+# Professor Frank Harrell) the following default values have been found to be useful in imputing missing baseline physiologic data:
 # Baseline Variable	Normal Fill-in Value
 # - Serum albumin (alb)	3.5
 # - PaO2/FiO2 ratio (pafi) 	333.3
@@ -266,6 +277,7 @@ head(final_df)
 
 
 # Create scatterplots for  charges variable against all the numeric variables one by one
+# To find out if linear relationship exists with some variables
 
 # Check the distribution of charges
 hist(final_df$charges, breaks = 50, main = "Histogram of Charges", xlab = "Charges", col = "blue", border = "black")
@@ -275,32 +287,41 @@ hist(final_df$charges, breaks = 50, main = "Histogram of Charges", xlab = "Charg
 # Take LOG of charges to Linearize relationships
 final_df$log_charges <- log(final_df$charges)
 
-# To handle cases where 'charges' might be 0 or negative, you might want to add a small constant:
+# To handle cases where 'charges' might be 0 or negative, 
+# you might want to add a small constant:
 final_df$log_charges <- log(final_df$charges + 1)
 
+# Check the distribution of log_charges
+hist(final_df$log_charges, breaks = 50, 
+     main = "Histogram of log_Charges", 
+     xlab = "Charges", col = "blue", border = "black")
+# Now the the charges data look more normally distributed
 
+# Make data ready for plotting
 numeric_vars <- names(final_df)[sapply(final_df, is.numeric)]
 numeric_vars
 
-################## for LOG charges#####################
 #Exclude 'log_charges' from Numeric Columns
-numeric_vars <- numeric_vars[numeric_vars != "log_charges"]
+
+numeric_vars <- numeric_vars[!(numeric_vars %in% c("log_charges", "charges"))]
+
 numeric_vars
 
-# Loop through each numeric variable and create a scatterplot against 'charges'
+# Loop through each numeric variable and create a scatterplot against 'log_charges'
+library(ggplot2)
 for (var in numeric_vars) {
   print(
     ggplot(final_df, aes_string(x = var, y = "log_charges")) +
-      geom_point() +
-      geom_smooth(method = "lm", se = FALSE) +  # Add a linear regression line
-      labs(title = paste("Scatterplot of LOG_charges vs", var), x = var, y = "charges")
+      geom_point(shape = 19, size = 1, alpha = 0.5, color = "blue") +
+      geom_smooth(method = "lm", se = FALSE, color = "red") +  # Add a linear regression line
+      labs(title = paste("Scatterplot of log_charges vs", var), x = var, y = "log_charges")
   )
 }
 
 # From the scatterplots of all variables against 'charges',
 # some of the interesting relationships are:
 # Positive: slos,edu,scoma, hday,wblc, hrt,temp, bili, crea, bun
-# Negative: age, num.co,  pafi, alb
+# Negative: age, num.co,  pafi
 
 ####################################################################
 #Predicting Charges for Life Support Patients: A Critical Aspect of Healthcare Management
@@ -317,12 +338,12 @@ for (var in numeric_vars) {
 # WHICH ARE THE MOST IMPORTANT VARIABLES ON WHICH 'log_charges' DEPEND UPON? 
 # LINEAR MODEL FOR RELATIONSHIP BETWEEN CHARGES AND OTHER VARIABLES
 
-#1. Fitting the starting model using all the numeric variables except charges
+#1. Fitting the starting model using all the variables except 'charges'
 
-numeric_columns <- sapply(final_df, is.numeric)
-numeric_df <- subset(final_df[numeric_columns], select = -charges) 
+#numeric_columns <- sapply(final_df, is.numeric)
+full_df <- subset(final_df, select = -charges) 
 
-lm.charges1 <- lm(log_charges~ ., data = numeric_df)
+lm.charges1 <- lm(log_charges~ ., data = full_df)
 summary(lm.charges1)
 
 # We test to see which variables can be dropped:
