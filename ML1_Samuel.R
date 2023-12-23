@@ -16,7 +16,7 @@ dim(df_support)
 
 ### Data Cleaning and Preprocessing
 # Identify and Group the categorical variables as categories of interest
-cat_interest <- c("death", "sex", "hospdead", "dzgroup", "dzclass", "income", "race", "diabetes", "dementia", "ca", "dnr", "adlp", "adls", "sfdm2")
+cat_interest <- c("sex", "hospdead", "dzgroup", "dzclass", "income", "race", "diabetes", "dementia", "ca", "dnr", "adlp", "adls", "sfdm2")
 
 # Apply unique function to validate that the cat_interest have unique categorical values and check their structure
 unique_values <- sapply(df_support[cat_interest], unique)
@@ -25,8 +25,6 @@ str(unique_values)
 
 # convert categorical and ordinal variables to factors  # nolint
 df_support$sex <- factor(df_support$sex)
-
-df_support$death <- factor(df_support$death)
 
 df_support$hospdead <- factor(df_support$hospdead)
 
@@ -157,7 +155,7 @@ na_counts_cor
 # ie. prg2m, prg6m and surv6m, totcst, sps, avtisst
 # And 'column_to_drop' is the name of the column you want to drop
 
-df_updated_mis <- subset(df_updated_mis, select = -c(prg2m, prg6m, surv6m, totcst, sps, avtisst, sfdm2))
+df_updated_mis <- subset(df_updated_mis, select = -c(death,prg2m, prg6m, surv6m, totcst, sps, avtisst, sfdm2))
 
 # Check complete cases
 num_complete_cases <- sum(complete.cases(df_updated_mis))
@@ -346,23 +344,104 @@ full_df <- subset(final_df, select = -charges)
 lm.charges1 <- lm(log_charges~ ., data = full_df)
 summary(lm.charges1)
 
-# We test to see which variables can be dropped:
-drop1(lm.charges1, test = "F")
+# Linear Model Summary: lm.charges3 on full_df
+# ----------------------------------------------------
+# Adjusted R-squared: 0.6849 - Model explains ~68.64% of variability
+# F-statistic highly significant - Strong overall model predictive power
 
+# Significant Predictors Include: age, death1, hospdead1, slos, hday,
+# various 'dzgroup' categories, edu, num.co, and health indicators.
+
+# Issues to Address:
+# - Multicollinearity: Remove 'dzclass' categories (NA coefficients)
+# - Remove less significant predictors: sexmale, diabetes1, wblc, crea, sod
+
+# Next Steps:
+# - Refine model by addressing multicollinearity and removing non-significant variables
+# - Conduct diagnostic checks for model assumptions
+# ----------------------------------------------------
 # Based on high p-values indicating statistical insignificance, 
 #the variables wblc, sod, and adlsc are candidates for removal
 # Including mildly significant variables, resp (p = 0.01321), urine (p = 0.04144), alb (0.011)
 
-# Updated model without the mildly significant variables to simplify the model
-lm.charges2 <- update(lm.charges1, . ~ . - wblc - sod - adlsc - resp - urine -alb)
+# We test to see which variables can be dropped:
+drop1(lm.charges1, test = "F")
+
+# Updating lm.charges1 Model:
+# ----------------------------------------------------
+# Based on drop1() analysis, the following variables are identified for removal due to their 
+# minimal impact on model AIC and lack of statistical significance:
+# - 'sex', 'diabetes', 'crea', 'sod', 'wblc': High p-values.
+# - 'dzclass', 'ca': High p-values or multicollinearity issues (NA coefficients).
+# Removal of these variables aims at model simplification without substantially impacting model performance.
+# The updated model (lm.charges2) will be reassessed for performance and adherence to regression assumptions.
+# ----------------------------------------------------
+# Update the model by excluding identified variables
+lm.charges2 <- update(lm.charges1, . ~ . - sex - diabetes - crea - sod - wblc - dzclass - ca)
 summary(lm.charges2)
 
+# Refined Model Summary: lm.charges2
+# ----------------------------------------------------
+# - Adjusted R-squared: 0.685; Residual SE: 0.7145
+# - Key Predictors: age, death1, hospdead1, slos, hday, dzgroup categories
+# - Some race predictors less significant (higher p-values)
+# - Strong overall model (F-statistic p-value < 2.2e-16)
+# - Next Steps: Reassess less significant predictors, validate model, check assumptions
+# ----------------------------------------------------
+
+# Example: removing race based on higher p-values
+lm.charges3 <- update(lm.charges2, . ~ . - race)
+summary(lm.charges3)
+
 # We test to see which variables can be dropped:
-drop1(lm.charges2, test = "F")
+drop1(lm.charges3, test = "F")
+
+# Assessing Variable Significance in lm.charges3 Model:
+# ----------------------------------------------------
+# The drop1() analysis indicates the relative importance of variables:
+# - Variables with the least impact on model AIC (smallest increase upon removal):
+#   1. 'adlsc': Minor change in AIC to -5844.8
+#   2. 'pafi': AIC changes slightly to -5844.4
+#   3. 'urine': AIC changes to -5843.2 upon removal
+#   4. 'alb', 'scoma', 'resp': Small changes in AIC (-5840.0, -5840.0, -5838.3, respectively)
+# - These variables are less crucial to the model's predictive accuracy.
+
+# ----------------------------------------------------
+
+# Update the model by removing variables with the least impact
+lm.charges4 <- update(lm.charges3, . ~ . 
+                      - adlsc - pafi - urine - alb - scoma - resp)
+
+# Check the summary of the updated model
+summary(lm.charges4)
+
+#################CROSS VALIDATION###########################
+# Load caret library
+library(caret)
+
+# Setting a seed for reproducibility of results
+set.seed(123)
+
+# Set up 10-fold cross-validation
+train_control <- trainControl(method = "cv", number = 10)  # Using 10 folds
+
+# Extracting the formula from the lm.charges4 model
+# This ensures we only use the variables that were in the lm.charges4 model
+model_formula <- formula(lm.charges4)
+
+# Performing 10-fold cross-validation using the extracted formula
+# The train function from the caret package is used for cross-validation
+# full_df is the dataset used to fit lm.charges4
+cv_model <- train(model_formula, data = full_df, method = "lm", trControl = train_control)
+
+# Displaying the results of cross-validation
+# The output includes important metrics such as RMSE and R-squared
+# These metrics help in evaluating the model's predictive accuracy
+print(cv_model)
+
+##################SIMPLIFYING THE MODEL#######################
 
 
-# Backward selection
-stepwise_model_backward <- step(lm.charges2, direction = "backward")
 
 
 
