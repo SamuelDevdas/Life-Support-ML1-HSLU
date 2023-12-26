@@ -16,7 +16,8 @@ dim(df_support)
 
 ### Data Cleaning and Preprocessing
 # Identify and Group the categorical variables as categories of interest
-cat_interest <- c("sex", "hospdead", "dzgroup", "dzclass", "income", "race", "diabetes", "dementia", "ca", "dnr", "adlp", "adls", "sfdm2")
+cat_interest <- c("sex", "hospdead", "dzgroup", "dzclass",
+                  "income", "race", "diabetes", "dementia", "ca", "dnr", "adlp", "adls", "sfdm2")
 
 # Apply unique function to validate that the cat_interest have unique categorical values and check their structure
 unique_values <- sapply(df_support[cat_interest], unique)
@@ -441,10 +442,74 @@ print(cv_model)
 
 ##################SIMPLIFYING THE MODEL#######################
 
+# Extracting coefficients
+model_coefs <- coef(lm.charges4)
+
+# The names of these coefficients are the variable names (excluding the intercept)
+variable_names <- names(model_coefs)[-1]  # Exclude the intercept
+print(variable_names)
+
+# Create a correlation plot to further investigate correlated variables'
+#and possibility of  elimination using domain knowledge
+
+# Using 'full_df' filter out non-numeric variables
+df_numeric <- full_df[sapply(full_df, is.numeric)]
+
+# Subsetting full_df to exclude variables not in 'lm.charges4'
+reduced_df <- subset(df_numeric, select = -c(adlsc, pafi, urine, alb, scoma, resp))
 
 
+cor_matrix <- cor(reduced_df, use = "complete.obs")  # Handling missing values
+
+# Flatten and filter
+corr_melted <- melt(cor_matrix)
+
+# Remove self-correlations and duplicates
+corr_melted <- subset(corr_melted, Var1 != Var2)
+corr_melted <- corr_melted[!duplicated(t(apply(corr_melted[, 1:2], 1, sort))), ]
+
+# Sort by absolute correlation value
+corr_melted <- corr_melted[order(-abs(corr_melted$value)), ]
+top_correlations <- head(corr_melted, 40)
+
+print(top_correlations)
+
+# Analysis of Significant Predictor Correlations in the Model:
+# ----------------------------------------------------------------------
+# Analyzing correlations among predictors, we identify several with strong to mild correlation:
+
+# 1. temp and hrt (0.2648): Though below the strong correlation threshold, this relationship is noteworthy.
+#    Further Validation: Investigate physiological literature,  
+#    to explore the linkage between body temperature and heart rate.
+
+# 2. hday and slos (0.1992): Reflects a relationship between hospitalization days and length of stay.
 
 
+# ----------------------------------------------------------------------
+# Conducting drop1 analysis
+drop1_analysis <- drop1(lm.charges4, test = "F")
+
+# Printing the results
+print(drop1_analysis)
+
+# Model Simplification Analysis Based on drop1:
+# - 'slos', 'hday', 'dzgroup': Critical for the model due to high AIC impact. Retain these.
+# - 'hospdead', 'bili', 'bun': Moderately impactful. Consider keeping unless strong rationale for removal.
+# - 'age', 'edu', 'meanbp': Lower impact. Could be candidates for simplification.
+# - 'd.time', 'num.co', 'dementia', 'hrt', 'temp', 'ph': Least impact. Potential to be dropped for a more streamlined model.
+
+
+# Updating the model by dropping variables with the least impact
+lm.charges5 <- update(lm.charges4, . ~ . - d.time - num.co 
+                      - dementia - hrt - temp - ph -meanbp -slos -hday )
+
+# Summary of the updated model
+summary(lm.charges5)
+
+# Conducting drop1 analysis
+drop1_analysis <- drop1(lm.charges5, test = "F")
+# Printing the results
+print(drop1_analysis)
 
 
 
