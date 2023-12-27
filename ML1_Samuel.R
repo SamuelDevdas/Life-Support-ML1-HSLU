@@ -416,29 +416,6 @@ lm.charges4 <- update(lm.charges3, . ~ .
 # Check the summary of the updated model
 summary(lm.charges4)
 
-#################CROSS VALIDATION###########################
-# Load caret library
-library(caret)
-
-# Setting a seed for reproducibility of results
-set.seed(123)
-
-# Set up 10-fold cross-validation
-train_control <- trainControl(method = "cv", number = 10)  # Using 10 folds
-
-# Extracting the formula from the lm.charges4 model
-# This ensures we only use the variables that were in the lm.charges4 model
-model_formula <- formula(lm.charges4)
-
-# Performing 10-fold cross-validation using the extracted formula
-# The train function from the caret package is used for cross-validation
-# full_df is the dataset used to fit lm.charges4
-cv_model <- train(model_formula, data = full_df, method = "lm", trControl = train_control)
-
-# Displaying the results of cross-validation
-# The output includes important metrics such as RMSE and R-squared
-# These metrics help in evaluating the model's predictive accuracy
-print(cv_model)
 
 ##################SIMPLIFYING THE MODEL#######################
 
@@ -480,9 +457,9 @@ print(top_correlations)
 # Analyzing correlations among predictors, we identify several with strong to mild correlation:
 
 # temp and hrt (0.2648): Though below the strong correlation threshold, this relationship is noteworthy.
-#    Further Validation: Investigate physiological literature,  
-#    to explore the linkage between body temperature and heart rate.
-
+#    Further Validation: Investigating physiological literature,  
+#    to the linkage between body temperature and heart rate is validated true.
+#   Insert reference link :
 # ----------------------------------------------------------------------
 # Conducting drop1 analysis
 drop1_analysis <- drop1(lm.charges4, test = "F")
@@ -493,11 +470,12 @@ print(drop1_analysis)
 # Model Simplification Analysis Based on drop1:
 # - 'hday','dzgroup': Drop both. Critical for simplicity due to high AIC impact.
 # -  'bili', 'bun': Drop 'bili' and retain 'bun' for blood factor.
-# - 'age', 'edu', : Drop 'age' and retain 'edu' for dual temporal and categorical aspects.
+# - 'age', 'edu', 'income' : Drop 'age','income' and 'dementia', retain 'edu' for dual temporal and categorical aspects.
 # - 'dementia', 'hrt', 'ph','meanbp': Drop 'hrt', as redundant with 'temp'. Drop 'ph' and 'meanbp'
 
 # Updating the model by dropping variables with the least impact
-lm.charges5 <- update(lm.charges4, . ~ . -dzgroup -hday -bili -age -hrt -ph -meanbp)
+lm.charges5 <- update(lm.charges4, . ~ . -dzgroup -hday -bili 
+                      -age -income -hrt -ph -meanbp -dementia)
 
 # Summary of the updated model
 summary(lm.charges5)
@@ -507,8 +485,69 @@ drop1_analysis <- drop1(lm.charges5, test = "F")
 # Printing the results
 print(drop1_analysis)
 
+# Finally the drop1 analysis does not yield further decreases in AIC values,
+# suggesting the model cannot be further simplified without loss of predicttive power.
 
+##############CROSS VALIDATION AND BEST MODEL SELECTION###############
 
+#################CROSS VALIDATION###########################
+
+# Manual Cross-Validation for lm.charges1
+# Setting a seed for reproducibility
+set.seed(123)
+
+# # Set up cross-validation control for 10-fold cross-validation
+# train_control1 <- trainControl(method = "cv", number = 10)
+# 
+# # Perform cross-validation for lm.charges1
+# cv_model1 <- train(log_charges ~ age + sex + hospdead + slos + d.time + dzgroup + 
+#                      dzclass + num.co + edu + income + scoma + race + hday + diabetes + 
+#                      dementia + ca + meanbp + wblc + hrt + resp + temp + pafi + 
+#                      alb + bili + crea + sod + ph + bun + urine + adlsc, 
+#                    data = full_df, method = "lm", trControl = train_control1)
+# 
+# # Print the results for lm.charges1
+# results1 <- cv_model1$results
+
+# Automated Cross-Validation for Remaining Models
+
+# Create a function for cross-validation
+cross_validate_model <- function(model, full_df, number_folds = 10) {
+  # Extract the formula from the model
+  model_formula <- formula(model)
+  
+  # Set up cross-validation control
+  train_control <- trainControl(method = "cv", number = number_folds)
+  
+  # Train the model using cross-validation
+  cv_model <- train(model_formula, data = full_df, method = "lm", trControl = train_control)
+  
+  # Return the results
+  return(cv_model$results)
+}
+
+# Perform cross-validation for each of the remaining models
+results1 <- cross_validate_model(lm.charges1, full_df)
+results2 <- cross_validate_model(lm.charges2, full_df)
+results3 <- cross_validate_model(lm.charges3, full_df)
+results4 <- cross_validate_model(lm.charges4, full_df)
+results5 <- cross_validate_model(lm.charges5, full_df)
+
+# Print the results for each as a table
+library(knitr)
+library(DT)
+
+# Rounding the values in the data frame
+results_df <- data.frame(
+  Model = c("lm.charges1", "lm.charges2", "lm.charges3", "lm.charges4", "lm.charges5"),
+  RMSE = round(c(results1$RMSE, results2$RMSE, results3$RMSE, results4$RMSE, results5$RMSE), 3),
+  Rsquared = round(c(results1$Rsquared, results2$Rsquared, results3$Rsquared, results4$Rsquared, results5$Rsquared), 3),
+  MAE = round(c(results1$MAE, results2$MAE, results3$MAE, results4$MAE, results5$MAE), 3)
+)
+
+kable(results_df, format = "markdown", caption = "Cross-validation Results")
+
+datatable(results_df, caption = 'Cross-validation Results', options = list(pageLength = 5))
 
 
 
