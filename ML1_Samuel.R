@@ -359,7 +359,7 @@ summary(lm.charges1)
 
 # Next Steps:
 # - Refine model by addressing multicollinearity and removing non-significant variables
-# - Conduct diagnostic checks for model assumptions
+
 # ----------------------------------------------------
 # Based on high p-values indicating statistical insignificance, 
 #the variables wblc, sod, and adlsc are candidates for removal
@@ -386,7 +386,6 @@ summary(lm.charges2)
 # - Adjusted R-squared: 0.685; Residual SE: 0.7145
 # - Key Predictors: age, death1, hospdead1, slos, hday, dzgroup categories
 # - Some race predictors less significant (higher p-values)
-# - Strong overall model (F-statistic p-value < 2.2e-16)
 # - Next Steps: Reassess less significant predictors, validate model, check assumptions
 # ----------------------------------------------------
 
@@ -401,17 +400,18 @@ drop1(lm.charges3, test = "F")
 # ----------------------------------------------------
 # The drop1() analysis indicates the relative importance of variables:
 # - Variables with the least impact on model AIC (smallest increase upon removal):
-#   1. 'adlsc': Minor change in AIC to -5844.8
+#   1. 'adlsc': Minor change in AIC to -5844.8 and lower significance
 #   2. 'pafi': AIC changes slightly to -5844.4
-#   3. 'urine': AIC changes to -5843.2 upon removal
-#   4. 'alb', 'scoma', 'resp': Small changes in AIC (-5840.0, -5840.0, -5838.3, respectively)
-# - These variables are less crucial to the model's predictive accuracy.
+#   3. 'urine': AIC changes to -5843.2 and lower significance
+#   4. 'alb', 'scoma', 'resp': Significant changes in AIC 
+#   5. 'd.time', 'slos': Keeping only one time variable i.e hday,
+#       as dropping slos changes AIC a lot to 1982, and d.time is statistically less significant
 
 # ----------------------------------------------------
 
 # Update the model by removing variables with the least impact
 lm.charges4 <- update(lm.charges3, . ~ . 
-                      - adlsc - pafi - urine - alb - scoma - resp)
+                      - adlsc - pafi - urine - alb - scoma - resp -slos -d.time)
 
 # Check the summary of the updated model
 summary(lm.charges4)
@@ -456,8 +456,9 @@ print(variable_names)
 df_numeric <- full_df[sapply(full_df, is.numeric)]
 
 # Subsetting full_df to exclude variables not in 'lm.charges4'
-reduced_df <- subset(df_numeric, select = -c(adlsc, pafi, urine, alb, scoma, resp))
-
+reduced_df <- subset(df_numeric, select = -c(adlsc, pafi, urine, 
+                                             alb, scoma, resp,slos,dtime))
+                                  
 
 cor_matrix <- cor(reduced_df, use = "complete.obs")  # Handling missing values
 
@@ -478,12 +479,9 @@ print(top_correlations)
 # ----------------------------------------------------------------------
 # Analyzing correlations among predictors, we identify several with strong to mild correlation:
 
-# 1. temp and hrt (0.2648): Though below the strong correlation threshold, this relationship is noteworthy.
+# temp and hrt (0.2648): Though below the strong correlation threshold, this relationship is noteworthy.
 #    Further Validation: Investigate physiological literature,  
 #    to explore the linkage between body temperature and heart rate.
-
-# 2. hday and slos (0.1992): Reflects a relationship between hospitalization days and length of stay.
-
 
 # ----------------------------------------------------------------------
 # Conducting drop1 analysis
@@ -493,15 +491,13 @@ drop1_analysis <- drop1(lm.charges4, test = "F")
 print(drop1_analysis)
 
 # Model Simplification Analysis Based on drop1:
-# - 'slos', 'hday', 'dzgroup': Critical for the model due to high AIC impact. Retain these.
-# - 'hospdead', 'bili', 'bun': Moderately impactful. Consider keeping unless strong rationale for removal.
-# - 'age', 'edu', 'meanbp': Lower impact. Could be candidates for simplification.
-# - 'd.time', 'num.co', 'dementia', 'hrt', 'temp', 'ph': Least impact. Potential to be dropped for a more streamlined model.
-
+# - 'hday','dzgroup': Drop both. Critical for simplicity due to high AIC impact.
+# -  'bili', 'bun': Drop 'bili' and retain 'bun' for blood factor.
+# - 'age', 'edu', : Drop 'age' and retain 'edu' for dual temporal and categorical aspects.
+# - 'dementia', 'hrt', 'ph','meanbp': Drop 'hrt', as redundant with 'temp'. Drop 'ph' and 'meanbp'
 
 # Updating the model by dropping variables with the least impact
-lm.charges5 <- update(lm.charges4, . ~ . - d.time - num.co 
-                      - dementia - hrt - temp - ph -meanbp -slos -hday )
+lm.charges5 <- update(lm.charges4, . ~ . -dzgroup -hday -bili -age -hrt -ph -meanbp)
 
 # Summary of the updated model
 summary(lm.charges5)
