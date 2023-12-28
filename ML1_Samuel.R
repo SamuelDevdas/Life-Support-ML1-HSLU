@@ -335,7 +335,7 @@ for (var in numeric_vars) {
 #####################################################################
 
 # WHICH ARE THE MOST IMPORTANT VARIABLES ON WHICH 'log_charges' DEPEND UPON? 
-# LINEAR MODEL FOR RELATIONSHIP BETWEEN CHARGES AND OTHER VARIABLES
+# DEVELOP MULTIPLE LINEAR MODELS TO  RELATIONSHIP BETWEEN CHARGES AND OTHER VARIABLES
 
 #1. Fitting the starting model using all the variables except 'charges'
 
@@ -434,9 +434,8 @@ df_numeric <- full_df[sapply(full_df, is.numeric)]
 
 # Subsetting full_df to exclude variables not in 'lm.charges4'
 reduced_df <- subset(df_numeric, select = -c(adlsc, pafi, urine, 
-                                             alb, scoma, resp,slos,dtime))
+                                             alb, scoma, resp,slos,d.time))
                                   
-
 cor_matrix <- cor(reduced_df, use = "complete.obs")  # Handling missing values
 
 # Flatten and filter
@@ -491,25 +490,10 @@ print(drop1_analysis)
 ##############CROSS VALIDATION AND BEST MODEL SELECTION###############
 
 #################CROSS VALIDATION###########################
+library(caret)
 
-# Manual Cross-Validation for lm.charges1
 # Setting a seed for reproducibility
 set.seed(123)
-
-# # Set up cross-validation control for 10-fold cross-validation
-# train_control1 <- trainControl(method = "cv", number = 10)
-# 
-# # Perform cross-validation for lm.charges1
-# cv_model1 <- train(log_charges ~ age + sex + hospdead + slos + d.time + dzgroup + 
-#                      dzclass + num.co + edu + income + scoma + race + hday + diabetes + 
-#                      dementia + ca + meanbp + wblc + hrt + resp + temp + pafi + 
-#                      alb + bili + crea + sod + ph + bun + urine + adlsc, 
-#                    data = full_df, method = "lm", trControl = train_control1)
-# 
-# # Print the results for lm.charges1
-# results1 <- cv_model1$results
-
-# Automated Cross-Validation for Remaining Models
 
 # Create a function for cross-validation
 cross_validate_model <- function(model, full_df, number_folds = 10) {
@@ -549,5 +533,69 @@ kable(results_df, format = "markdown", caption = "Cross-validation Results")
 
 datatable(results_df, caption = 'Cross-validation Results', options = list(pageLength = 5))
 
+##########INTERACTION-TERMS EFFECT ON model 'lm.charges4'######
+# Are there any interesting interactions effects on charges due to 
+# variables?
+# 1. Does the impact of age on healthcare charges vary significantly
+# across different disease groups in the dataset?
 
+# Adding an interaction term between age and disease group to the model
+lm_age_dzgroup <- lm(log_charges ~ age * dzgroup 
+                                 + hospdead + num.co + edu + income
+                                 + hday + dementia + meanbp + hrt + temp + bili + ph + bun, 
+                                 data = full_df)
+
+# Checking the summary of the model to see the interaction effect
+summary(lm_age_dzgroup)
+
+# Summary of Interaction Effects between Age and Disease Groups
+# - CHF: Significant decrease in charges with age.
+# - Coma: Significant decrease in charges with age.
+# - MOSF w/Malignancy: Significant decrease in charges with age.
+# - Cirrhosis, Colon Cancer, COPD, Lung Cancer: No significant interaction.
+
+# 2. Is the effect of hospital death on healthcare charges modified 
+#  by the type of disease a patient has?
+# Adding an interaction term between hospital stay length (hospdead) and disease group
+lm_hospdead_dzgroup <- lm(log_charges ~ hospdead * dzgroup 
+                                      + age + num.co + edu + income
+                                      + hday + dementia + meanbp + hrt + temp + bili + ph + bun, 
+                                      data = full_df)
+
+# Checking the summary of the model to see the interaction effect
+summary(lm_hospdead_dzgroup)
+
+# Summary of Interaction Effects between Hospital Death and Disease Group
+# - CHF, Cirrhosis, COPD: Significant increase in charges with hospital death.
+# - Coma: Significant decrease in charges with hospital death.
+# - Colon Cancer, Lung Cancer, MOSF w/Malignancy: No significant interaction.
+
+#########CROSS VALIDATE AND COMPARE RESULTS##########
+
+set.seed(123)
+
+# Perform cross-validation for the Age-Disease Group Interaction Model
+results_age_dzgroup <- cross_validate_model(lm_age_dzgroup, full_df)
+
+# Perform cross-validation for the Hospdead-Disease Group Interaction Model
+results_hospdead_dzgroup <- cross_validate_model(lm_hospdead_dzgroup, full_df)
+
+# Compile the results into a table
+results_df <- data.frame(
+  Model = c("lm.charges4", "Age-Disease Group Interaction", "Hospdead-Disease Group Interaction"),
+  RMSE = round(c(results4$RMSE, results_age_dzgroup$RMSE, results_hospdead_dzgroup$RMSE), 3),
+  Rsquared = round(c(results4$Rsquared, results_age_dzgroup$Rsquared, results_hospdead_dzgroup$Rsquared), 3),
+  MAE = round(c(results4$MAE, results_age_dzgroup$MAE, results_hospdead_dzgroup$MAE), 3)
+)
+
+# Use knitr and DT packages to display the results table
+library(knitr)
+library(DT)
+
+datatable(results_df, caption = 'Cross-validation Results for Interaction Models and lm.charges4', options = list(pageLength = 5))
+
+# Cross-validation Results Summary
+# - Baseline (lm.charges4): RMSE: 0.897, R-squared: 0.504, MAE: 0.714.
+# - Age Interaction: Marginal improvement over baseline.
+# - Hospdead Interaction: Best performance with lowest RMSE (0.887) and highest R-squared (0.516).
 
