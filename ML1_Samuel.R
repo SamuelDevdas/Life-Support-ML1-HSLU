@@ -529,9 +529,16 @@ results_df <- data.frame(
   MAE = round(c(results1$MAE, results2$MAE, results3$MAE, results4$MAE, results5$MAE), 3)
 )
 
-kable(results_df, format = "markdown", caption = "Cross-validation Results")
-
 datatable(results_df, caption = 'Cross-validation Results', options = list(pageLength = 5))
+
+########### Cross-validation Results Brief###########
+
+# Models lm.charges1 and lm.charges2 show the highest predictive accuracy (RMSE ~0.718-0.719, R-squared ~0.682-0.683). 
+# lm.charges3 slightly underperforms compared to the first two.
+# lm.charges4, while less accurate (RMSE: 0.897, R-squared: 0.504), offers a balance between simplicity and accuracy.
+# lm.charges5 exhibits significantly lower performance (RMSE: 1.165, R-squared: 0.164), indicating potential overfitting.
+
+# Conclusion: Despite a minor compromise on accuracy, lm.charges4 may be preferred for its balance of model simplicity and predictive power.
 
 ##########INTERACTION-TERMS EFFECT ON model 'lm.charges4'######
 # Are there any interesting interactions effects on charges due to 
@@ -598,4 +605,225 @@ datatable(results_df, caption = 'Cross-validation Results for Interaction Models
 # - Baseline (lm.charges4): RMSE: 0.897, R-squared: 0.504, MAE: 0.714.
 # - Age Interaction: Marginal improvement over baseline.
 # - Hospdead Interaction: Best performance with lowest RMSE (0.887) and highest R-squared (0.516).
+
+#########Visual Exploration of Non-Linear Trends#############
+
+# Loop through each numeric variable to visually explore potential non-linear relationships
+library(ggplot2)
+
+for (var in numeric_vars) {
+  # Creating a scatterplot with a smoother to detect non-linear trends
+  print(
+    ggplot(final_df, aes_string(x = var, y = "log_charges")) +
+      geom_point(shape = 19, size = 1, alpha = 0.5, color = "blue") +
+      geom_smooth(se = TRUE, color = "red", fill = "orange") +  # Loess smoother for non-linear trends
+      labs(title = paste("2Exploring Non-Linear Relationship of", var, "with log_charges"),
+           x = var, y = "log_charges")
+  )
+  
+  # Comment: Each plot shows the relationship between 'log_charges' and a numeric variable
+  # The smoother (red line with orange confidence area) helps identify potential non-linear patterns
+}
+# EDA Summary: Non-Linear Effects
+
+# Quadratic Effects: meanbp, bun, ph, alb
+# Polynomial Effects: temp, wblc, edu, hrt, hday, bili, num.co
+# No significant non-linear trend in age.
+
+
+#######Iterating on the lm.charges4, with non linear effects######
+
+# Building a model incorporating observed non-linear effects
+
+# Update the lm.charges4 model with non-linear terms
+nonlinear.lm.charges4 <- update(lm.charges4, . ~ . - meanbp - bun - ph - alb 
+                                - temp - wblc - edu - hrt - hday - bili - num.co +
+                                  poly(meanbp, 2) + 
+                                  poly(bun, 2) +
+                                  poly(ph, 2) +
+                                  poly(alb, 2) +
+                                  poly(temp, 3) + 
+                                  poly(wblc, 3) + 
+                                  poly(edu, 3) +
+                                  poly(hrt, 3) +
+                                  poly(hday, 3) +
+                                  poly(bili, 3) +
+                                  poly(num.co, 3))
+
+
+# Summary of the updated model
+summary(nonlinear.lm.charges4)
+
+# Drop impact analysis
+drop1(nonlinear.lm.charges4, test = "F")
+
+# Simplify model, step removes: alb & wblc higher order poly terms
+lm.nonlinear.trim <- step(nonlinear.lm.charges4, direction = "backward")
+summary(lm.nonlinear.trim)
+
+# CROSS VALIDATE AND COMPARE RESULTS
+# Perform cross-validation for nonlinear.lm.charges4
+results_nonlinear_charges4 <- cross_validate_model(nonlinear.lm.charges4, full_df)
+
+# Perform cross-validation for the final trimmed model
+results_trimmed <- cross_validate_model(lm.nonlinear.trim, full_df)
+
+# Combine the results into one data frame in the specified order
+all_results_df <- data.frame(
+  Model = c(
+    "lm.charges1", "lm.charges2", "lm.charges3", "lm.charges4", "lm.charges5",
+    "Age-Disease Group Interaction", "Hospdead-Disease Group Interaction",
+    "Nonlinear lm.charges4", "Trimmed Nonlinear Model"
+  ),
+  RMSE = round(c(
+    results1$RMSE, results2$RMSE, results3$RMSE, results4$RMSE, results5$RMSE,
+    results_age_dzgroup$RMSE, results_hospdead_dzgroup$RMSE,
+    results_nonlinear_charges4$RMSE, results_trimmed$RMSE
+  ), 3),
+  Rsquared = round(c(
+    results1$Rsquared, results2$Rsquared, results3$Rsquared, results4$Rsquared, results5$Rsquared,
+    results_age_dzgroup$Rsquared, results_hospdead_dzgroup$Rsquared,
+    results_nonlinear_charges4$Rsquared, results_trimmed$Rsquared
+  ), 3),
+  MAE = round(c(
+    results1$MAE, results2$MAE, results3$MAE, results4$MAE, results5$MAE,
+    results_age_dzgroup$MAE, results_hospdead_dzgroup$MAE,
+    results_nonlinear_charges4$MAE, results_trimmed$MAE
+  ), 3)
+)
+
+# Display the combined results table
+datatable(all_results_df, caption = 'Comprehensive Cross-validation Results Comparison', options = list(pageLength = 10))
+
+# Cross-validation Results Summary:
+
+# - **Linear Models (lm.charges1-3)**: Good predictive accuracy with RMSE ~0.72, R-squared ~0.68.
+# - **Simplified Models (lm.charges4-5)**: Lower performance; lm.charges5 particularly poor (RMSE: 1.165, R-squared: 0.164).
+# - **Interaction Models**: Comparable to lm.charges4; slight improvements in R-squared but not significant.
+# - **Poly Model**: Slight improvement over lm.charges4 (RMSE: 0.882, R-squared: 0.521).
+# - **Trimmed Poly Model**: Reduced performance (RMSE: 1.006, R-squared: 0.386).
+# 
+# **Key Insight**: Nonlinear.lm.charges4 balances complexity with predictive accuracy
+
+
+##############GENERALIZED ADDITIVE MODEL############
+# We update our most performant model to check if it can be further improved
+
+# Load GAM library
+library(mgcv)
+
+# Update the model to a default GAM
+gam.charges4 <- gam(log_charges ~ hospdead + sex + age + dzgroup + 
+                                s(meanbp) + 
+                                s(bun) +
+                                s(ph) +
+                                s(alb) +
+                                s(temp) + 
+                                s(wblc) + 
+                                s(edu) +
+                                s(hrt) +
+                                s(hday) +
+                                s(bili) +
+                                s(num.co),
+                              data = full_df)
+
+# Summary of the GAM model
+summary(gam.charges4)
+# GAM Summary Insights
+# 1. Significant Linear Predictors: hospdead, age, dzgroup categories.
+# 2. Non-Linear Relationships: Complex relationships identified for meanbp, bun, ph, temp, edu, hrt, hday, bili.
+# 3. Model Fit: Adjusted R-squared of 0.54; GCV score of 0.7519.
+# 4. Key Takeaway: Model captures both linear and non-linear dynamics, indicating the complexity of factors affecting log_charges.
+
+library(gam)
+library(Metrics)
+
+set.seed(123) # For reproducibility
+
+# Define the number of folds for cross-validation
+n_folds <- 10
+folds <- cut(seq(1, nrow(full_df)), breaks = n_folds, labels = FALSE)
+
+# Initialize variables to store metrics
+rmse_values <- numeric(n_folds)
+rsquared_values <- numeric(n_folds)
+mae_values <- numeric(n_folds)
+
+# Cross-validation loop
+for(i in 1:n_folds){
+  # Split data into training and test sets
+  test_indices <- which(folds == i, arr.ind = TRUE)
+  train_data <- full_df[-test_indices, ]
+  test_data <- full_df[test_indices, ]
+  
+  # Fit GAM model
+  gam_model <- gam(log_charges ~ hospdead + sex + age + dzgroup + s(meanbp) + s(bun) + 
+                     s(ph) + s(alb) + s(temp) + s(wblc) + s(edu) + s(hrt) + s(hday) + 
+                     s(bili) + s(num.co), data = train_data)
+  
+  # Predict on test set
+  predictions <- predict(gam_model, test_data)
+  
+  # Calculate metrics
+  rmse_values[i] <- rmse(test_data$log_charges, predictions)
+  rsquared_values[i] <- cor(test_data$log_charges, predictions)^2
+  mae_values[i] <- mae(test_data$log_charges, predictions)
+}
+
+# Calculate average metrics
+mean_rmse <- mean(rmse_values)
+mean_rsquared <- mean(rsquared_values)
+mean_mae <- mean(mae_values)
+
+# # Print results
+# cat("Cross-Validation Results for GAM Model:\n")
+# cat("Average RMSE:", mean_rmse, "\n")
+# cat("Average R-squared:", mean_rsquared, "\n")
+# cat("Average MAE:", mean_mae, "\n")
+
+# Manually computed cross-validation metrics for the GAM model
+mean_rmse_gam <- mean_rmse
+mean_rsquared_gam <- mean_rsquared
+mean_mae_gam <- mean_mae
+
+# Combine the results into one data frame in the specified order
+all_results_df <- data.frame(
+  Model = c(
+    "lm.charges1", "lm.charges2", "lm.charges3", "lm.charges4", "lm.charges5",
+    "Age-Disease Group Interaction", "Hospdead-Disease Group Interaction",
+    "Nonlinear lm.charges4", "Trimmed Nonlinear Model", "GAM Model"
+  ),
+  RMSE = round(c(
+    results1$RMSE, results2$RMSE, results3$RMSE, results4$RMSE, results5$RMSE,
+    results_age_dzgroup$RMSE, results_hospdead_dzgroup$RMSE,
+    results_nonlinear_charges4$RMSE, results_trimmed$RMSE, mean_rmse_gam
+  ), 3),
+  Rsquared = round(c(
+    results1$Rsquared, results2$Rsquared, results3$Rsquared, results4$Rsquared, results5$Rsquared,
+    results_age_dzgroup$Rsquared, results_hospdead_dzgroup$Rsquared,
+    results_nonlinear_charges4$Rsquared, results_trimmed$Rsquared, mean_rsquared_gam
+  ), 3),
+  MAE = round(c(
+    results1$MAE, results2$MAE, results3$MAE, results4$MAE, results5$MAE,
+    results_age_dzgroup$MAE, results_hospdead_dzgroup$MAE,
+    results_nonlinear_charges4$MAE, results_trimmed$MAE, mean_mae_gam
+  ), 3)
+)
+
+# Display the combined results table
+library(DT)
+datatable(all_results_df, caption = 'Comprehensive Cross-validation Results Comparison', options = list(pageLength = 10))
+
+
+
+
+
+
+
+
+
+
+
+
+
 
