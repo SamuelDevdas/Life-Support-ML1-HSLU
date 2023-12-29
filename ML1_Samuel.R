@@ -775,12 +775,6 @@ mean_rmse <- mean(rmse_values)
 mean_rsquared <- mean(rsquared_values)
 mean_mae <- mean(mae_values)
 
-# # Print results
-# cat("Cross-Validation Results for GAM Model:\n")
-# cat("Average RMSE:", mean_rmse, "\n")
-# cat("Average R-squared:", mean_rsquared, "\n")
-# cat("Average MAE:", mean_mae, "\n")
-
 # Manually computed cross-validation metrics for the GAM model
 mean_rmse_gam <- mean_rmse
 mean_rsquared_gam <- mean_rsquared
@@ -816,10 +810,107 @@ datatable(all_results_df, caption = 'Comprehensive Cross-validation Results Comp
 
 
 
+###########GLM : LOGISTIC REGRESSION##################
+# What are the key predictors that significantly influence the likelihood of 
+#a patient's death in the hospital?
+
+# Including log_charges in the dataset for visualizing hospdead
+# Make data ready for plotting
+numeric_vars <- names(final_df)[sapply(final_df, is.numeric)]
+numeric_vars
+
+#Exclude 'log_charges' from Numeric Columns
+
+numeric_vars <- numeric_vars[!(numeric_vars %in% c("charges"))]
+numeric_vars
+
+library(ggplot2)
+
+# Assuming 'final_df' is your dataframe and it contains a binary variable 'hospdead'
+# and 'numeric_vars' is a vector of all numeric variable names you want to plot.
+
+for (var in numeric_vars) {
+  print(ggplot(final_df, aes_string(x = var, y = 'hospdead')) +
+    geom_jitter(aes(color = as.factor(hospdead)), width = 0.1, height = 0.1) +
+    scale_color_manual(values = c('0' = 'red', '1' = 'blue')) +
+    labs(title = paste("Scatterplot of", var, "against hospdead status"),
+         x = var, y = "Hospdead Status") +
+    theme_minimal())
+}
+
+# OBSERVATION: The visual inspection of scatterplots comparing each numeric 
+# variable with the hospdead status reveals no clear patterns or 
+# distinctions that could reliably classify a patient's hospital death status.
 
 
+# Start building a logistic regression model to confirm
+logistic_model1 <- glm(hospdead ~ . , family = "binomial", data = final_df)
+
+# Summary of the model
+summary(logistic_model)
+
+# The starting model doesnt yield significant terms as anticipated,
+#therefore we start out by building model from scratch using age
+
+logistic_1 <- glm(hospdead ~ age , family = "binomial", data = final_df)
+summary(logistic_1)
+
+#Adding other likely factors one by one like sex, adls, slos, hday, 
+logistic_2 <- glm(hospdead ~ age + sex , family = "binomial", data = final_df)
+summary(logistic_2)
+
+logistic_3 <- glm(hospdead ~ age + adlsc, family = "binomial", data = final_df)
+summary(logistic_3)
+
+logistic_4 <- glm(hospdead ~ age + adlsc + slos, family = "binomial", data = final_df)
+summary(logistic_4)
+
+logistic_5 <- glm(hospdead ~ age + adlsc + hday, family = "binomial", data = final_df)
+summary(logistic_5)
+
+logistic_6 <- glm(hospdead ~ age + adlsc + hday + alb 
+                  + bili  + crea + dzclass + pafi, family = "binomial", data = final_df)
+summary(logistic_6)
+
+step(logistic_6, direction = "backward")
 
 
+#########
+# Building an initial logistic regression model using all variables
+# to evaluate their initial significance.
+logistic_model1 <- glm(hospdead ~ . , family = "binomial", data = final_df)
+summary(logistic_model1)
+
+# The initial model yields no significant terms, indicating potential issues with multicollinearity or irrelevance.
+# Therefore, we start building the model from scratch, beginning with the most promising predictor: age.
+logistic_1 <- glm(hospdead ~ age , family = "binomial", data = final_df)
+summary(logistic_1)
+
+# Adding 'sex' to the model, as gender differences may influence hospital death outcomes.
+logistic_2 <- glm(hospdead ~ age + sex , family = "binomial", data = final_df)
+summary(logistic_2)
+
+# Incorporating 'adlsc' (Activities of Daily Living Score) as it can be a strong indicator of patient health status.
+logistic_3 <- glm(hospdead ~ age + adlsc, family = "binomial", data = final_df)
+summary(logistic_3)
+
+# Adding 'slos' (Days from Study Entry to Discharge) to explore if shorter treatment time correlate with mortality.
+logistic_4 <- glm(hospdead ~ age + adlsc + slos, family = "binomial", data = final_df)
+summary(logistic_4)
+
+# Including 'hday' (Hospital Day) to assess the impact of the duration of hospitalization on patient outcomes.
+logistic_5 <- glm(hospdead ~ age + adlsc + hday, family = "binomial", data = final_df)
+summary(logistic_5)
+
+# Expanding the model with clinical variables like 'alb' (Albumin levels), 'bili' (Bilirubin levels), 
+# 'crea' (Creatinine levels), 'pafi' (Partial Pressure of Arterial Oxygen), and 'dzclass' for disease classification.
+# These clinical measures are often critical in understanding patient health and predicting outcomes.
+logistic_6 <- glm(hospdead ~ age + adlsc + hday + alb + bili + crea + dzclass + pafi, family = "binomial", data = final_df)
+summary(logistic_6)
+
+# Applying backward stepwise regression to the expanded model to refine it by removing statistically insignificant variables.
+# This helps in achieving a simpler model that still captures essential predictors for hospital death.
+step(logistic_6, direction = "backward")
 
 
 
