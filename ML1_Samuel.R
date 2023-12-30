@@ -156,7 +156,7 @@ na_counts_cor
 # ie. prg2m, prg6m and surv6m, totcst, sps, avtisst
 # And 'column_to_drop' is the name of the column you want to drop
 
-df_updated_mis <- subset(df_updated_mis, select = -c(death,prg2m, prg6m, surv6m, totcst, sps, avtisst, sfdm2))
+df_updated_mis <- subset(df_updated_mis, select = -c(prg2m, prg6m, surv6m, totcst, sps, avtisst, sfdm2))
 
 # Check complete cases
 num_complete_cases <- sum(complete.cases(df_updated_mis))
@@ -257,13 +257,28 @@ dim(final_df)
 
 sort(colnames(final_df))
 
-# Drop the variables that are findings from the previous model as per Datasource repository
+# Refining the Dataset for Predictive Modeling
+# Removing variables based on domain knowledge and previous model insights:
+# - Variables like 'aps', 'dnr', 'dnrday', 'surv2m' are post-admission metrics, not relevant at initial assessment.
+# - Clinical measurements 'sod', 'ca', 'urine' show limited predictive value and redundancy.
+# - Redundant or less impactful variables: 'diabetes', 'dzclass', 'hrt', 'd.time', 'death', 'resp', wblc
 
 final_df <- subset(final_df, select = -c(
     aps,
     dnr,
     dnrday,
-    surv2m
+    surv2m,
+    sod, 
+    ca, 
+    diabetes, 
+    dzclass, 
+    urine, 
+    hrt,
+    d.time,
+    death, 
+    resp,
+    sex,
+    race, wblc
 ))
 
 # Check
@@ -271,9 +286,6 @@ sort(colnames(final_df))
 
 #################### Exploratory Data Analysis#####################
 str(final_df)
-
-head(final_df)
-
 
 # Create scatterplots for  charges variable against all the numeric variables one by one
 # To find out if linear relationship exists with some variables
@@ -842,40 +854,6 @@ for (var in numeric_vars) {
 # variable with the hospdead status reveals no clear patterns or 
 # distinctions that could reliably classify a patient's hospital death status.
 
-
-# Start building a logistic regression model to confirm
-logistic_model1 <- glm(hospdead ~ . , family = "binomial", data = final_df)
-
-# Summary of the model
-summary(logistic_model)
-
-# The starting model doesnt yield significant terms as anticipated,
-#therefore we start out by building model from scratch using age
-
-logistic_1 <- glm(hospdead ~ age , family = "binomial", data = final_df)
-summary(logistic_1)
-
-#Adding other likely factors one by one like sex, adls, slos, hday, 
-logistic_2 <- glm(hospdead ~ age + sex , family = "binomial", data = final_df)
-summary(logistic_2)
-
-logistic_3 <- glm(hospdead ~ age + adlsc, family = "binomial", data = final_df)
-summary(logistic_3)
-
-logistic_4 <- glm(hospdead ~ age + adlsc + slos, family = "binomial", data = final_df)
-summary(logistic_4)
-
-logistic_5 <- glm(hospdead ~ age + adlsc + hday, family = "binomial", data = final_df)
-summary(logistic_5)
-
-logistic_6 <- glm(hospdead ~ age + adlsc + hday + alb 
-                  + bili  + crea + dzclass + pafi, family = "binomial", data = final_df)
-summary(logistic_6)
-
-step(logistic_6, direction = "backward")
-
-
-#########
 # Building an initial logistic regression model using all variables
 # to evaluate their initial significance.
 logistic_model1 <- glm(hospdead ~ . , family = "binomial", data = final_df)
@@ -911,6 +889,34 @@ summary(logistic_6)
 # Applying backward stepwise regression to the expanded model to refine it by removing statistically insignificant variables.
 # This helps in achieving a simpler model that still captures essential predictors for hospital death.
 step(logistic_6, direction = "backward")
+
+
+##########
+library(caret)
+
+# Set a seed for reproducibility
+set.seed(123)
+
+# Define the control method for cross-validation
+train_control <- trainControl(method = "cv", number = 10, classProbs = TRUE, summaryFunction = twoClassSummary)
+
+# Ensure 'hospdead' is a factor
+final_df$hospdead <- as.factor(final_df$hospdead)
+
+# Rename the factor levels to be valid R variable names
+levels(final_df$hospdead) <- make.names(levels(final_df$hospdead))
+
+# Now proceed with the cross-validation
+cv_logistic <- train(hospdead ~ age + adlsc + hday + alb + bili + crea + dzclass + pafi, 
+                     data = final_df, 
+                     method = "glm", 
+                     family = "binomial",
+                     trControl = train_control,
+                     metric = "ROC")
+
+# Print the results
+print(cv_logistic)
+
 
 
 
