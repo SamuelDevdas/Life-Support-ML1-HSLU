@@ -359,109 +359,54 @@ summary(lm.charges1)
 
 # Linear Model Summary: lm.charges3 on full_df
 # ----------------------------------------------------
-# Adjusted R-squared: 0.6849 - Model explains ~68.64% of variability
+# Adjusted R-squared: 0.676 - Model explains ~67.6% of variability
 # F-statistic highly significant - Strong overall model predictive power
 
-# Significant Predictors Include: age, death1, hospdead1, slos, hday,
-# various 'dzgroup' categories, edu, num.co, and health indicators.
+# All variables significant except 'crea'
 
 # Issues to Address:
-# - Multicollinearity: Remove 'dzclass' categories (NA coefficients)
-# - Remove less significant predictors: sexmale, diabetes1, wblc, crea, sod
-
-# Next Steps:
-# - Refine model by addressing multicollinearity and removing non-significant variables
+# - Remove less significant predictor: crea
 
 # ----------------------------------------------------
-# Based on high p-values indicating statistical insignificance, 
-#the variables wblc, sod, and adlsc are candidates for removal
-# Including mildly significant variables, resp (p = 0.01321), urine (p = 0.04144), alb (0.011)
-
 # We test to see which variables can be dropped:
 drop1(lm.charges1, test = "F")
 
-# Updating lm.charges1 Model:
-# ----------------------------------------------------
-# Based on drop1() analysis, the following variables are identified for removal due to their 
-# minimal impact on model AIC and lack of statistical significance:
-# - 'sex', 'diabetes', 'crea', 'sod', 'wblc': High p-values.
-# - 'dzclass', 'ca': High p-values or multicollinearity issues (NA coefficients).
-# Removal of these variables aims at model simplification without substantially impacting model performance.
-# The updated model (lm.charges2) will be reassessed for performance and adherence to regression assumptions.
-# ----------------------------------------------------
 # Update the model by excluding identified variables
-lm.charges2 <- update(lm.charges1, . ~ . - sex - diabetes - crea - sod - wblc - dzclass - ca)
+lm.charges2 <- update(lm.charges1, . ~ . - crea)
 summary(lm.charges2)
 
 # Refined Model Summary: lm.charges2
 # ----------------------------------------------------
-# - Adjusted R-squared: 0.685; Residual SE: 0.7145
-# - Key Predictors: age, death1, hospdead1, slos, hday, dzgroup categories
-# - Some race predictors less significant (higher p-values)
-# - Next Steps: Reassess less significant predictors, validate model, check assumptions
+# - Adjusted R-squared: 0.676; Residual SE: 0.724
 # ----------------------------------------------------
+# We test to see which variables can be dropped:
+drop1(lm.charges2, test = "F")
 
-# Example: removing race based on higher p-values
-lm.charges3 <- update(lm.charges2, . ~ . - race)
+# Continue removing  based on lower p-values and AIC impact
+lm.charges3 <- update(lm.charges2, . ~ . -adlsc -alb - pafi -scoma )
 summary(lm.charges3)
+# - Adjusted R-squared: 0.675; Residual SE: 0.725, Same fit but simpler
 
 # We test to see which variables can be dropped:
 drop1(lm.charges3, test = "F")
 
-# Assessing Variable Significance in lm.charges3 Model:
-# ----------------------------------------------------
-# The drop1() analysis indicates the relative importance of variables:
-# - Variables with the least impact on model AIC (smallest increase upon removal):
-#   1. 'adlsc': Minor change in AIC to -5844.8 and lower significance
-#   2. 'pafi': AIC changes slightly to -5844.4
-#   3. 'urine': AIC changes to -5843.2 and lower significance
-#   4. 'alb', 'scoma', 'resp': Significant changes in AIC 
-#   5. 'd.time', 'slos': Keeping only one time variable i.e hday,
-#       as dropping slos changes AIC a lot to 1982, and d.time is statistically less significant
 
-# ----------------------------------------------------
-
-# Update the model by removing variables with the least impact
+# Continue, Updating the model by removing variables with 
+# lower p-values and with AIC impact
 lm.charges4 <- update(lm.charges3, . ~ . 
-                      - adlsc - pafi - urine - alb - scoma - resp -slos -d.time)
-
-# Check the summary of the updated model
+                      - ph -dementia -num.co -meanbp )
 summary(lm.charges4)
+# - Adjusted R-squared: 0.671; Residual SE: 0.729, Same fit much simpler
+# We test to see which variables can be dropped:
+drop1(lm.charges4, test = "F")
 
+# Continue, Updating the model by removing variables with 
+# lower p-values and with AIC impact
+lm.charges5 <- update(lm.charges4, . ~ . - temp -income)
+summary(lm.charges5)
+# - Adjusted R-squared: 0.666; Residual SE: 0.735, Still similar fit much more simpler
+drop1(lm.charges5, test = "F")
 
-##################SIMPLIFYING THE MODEL#######################
-
-# Extracting coefficients
-model_coefs <- coef(lm.charges4)
-
-# The names of these coefficients are the variable names (excluding the intercept)
-variable_names <- names(model_coefs)[-1]  # Exclude the intercept
-print(variable_names)
-
-# Create a correlation plot to further investigate correlated variables'
-#and possibility of  elimination using domain knowledge
-
-# Using 'full_df' filter out non-numeric variables
-df_numeric <- full_df[sapply(full_df, is.numeric)]
-
-# Subsetting full_df to exclude variables not in 'lm.charges4'
-reduced_df <- subset(df_numeric, select = -c(adlsc, pafi, urine, 
-                                             alb, scoma, resp,slos,d.time))
-                                  
-cor_matrix <- cor(reduced_df, use = "complete.obs")  # Handling missing values
-
-# Flatten and filter
-corr_melted <- melt(cor_matrix)
-
-# Remove self-correlations and duplicates
-corr_melted <- subset(corr_melted, Var1 != Var2)
-corr_melted <- corr_melted[!duplicated(t(apply(corr_melted[, 1:2], 1, sort))), ]
-
-# Sort by absolute correlation value
-corr_melted <- corr_melted[order(-abs(corr_melted$value)), ]
-top_correlations <- head(corr_melted, 40)
-
-print(top_correlations)
 
 # Analysis of Significant Predictor Correlations in the Model:
 # ----------------------------------------------------------------------
@@ -472,32 +417,47 @@ print(top_correlations)
 #    to the linkage between body temperature and heart rate is validated true.
 #   Insert reference link :
 # ----------------------------------------------------------------------
-# Conducting drop1 analysis
-drop1_analysis <- drop1(lm.charges4, test = "F")
 
-# Printing the results
-print(drop1_analysis)
 
-# Model Simplification Analysis Based on drop1:
-# - 'hday','dzgroup': Drop both. Critical for simplicity due to high AIC impact.
-# -  'bili', 'bun': Drop 'bili' and retain 'bun' for blood factor.
-# - 'age', 'edu', 'income' : Drop 'age','income' and 'dementia', retain 'edu' for dual temporal and categorical aspects.
-# - 'dementia', 'hrt', 'ph','meanbp': Drop 'hrt', as redundant with 'temp'. Drop 'ph' and 'meanbp'
-
-# Updating the model by dropping variables with the least impact
-lm.charges5 <- update(lm.charges4, . ~ . -dzgroup -hday -bili 
-                      -age -income -hrt -ph -meanbp -dementia)
+# Updating the model by dropping variables with Highest AIC impact
+lm.charges5 <- update(lm.charges4, . ~ . - slos )
 
 # Summary of the updated model
 summary(lm.charges5)
+# - Adjusted R-squared: 0.49; Residual SE: 0.9, Worse fit much more simpler
+
+drop1(lm.charges5, test = "F")
+
+# Updating the model by dropping variable with higher p-values
+lm.charges6 <- update(lm.charges5, . ~ . - income )
+
+summary(lm.charges6)
+# - Adjusted R-squared: 0.494; Residual SE: 0.9, better fit much more simpler
 
 # Conducting drop1 analysis
-drop1_analysis <- drop1(lm.charges5, test = "F")
-# Printing the results
-print(drop1_analysis)
+drop1(lm.charges6, test = "F")
 
-# Finally the drop1 analysis does not yield further decreases in AIC values,
-# suggesting the model cannot be further simplified without loss of predicttive power.
+# Updating the model by dropping variables higher p-values
+lm.charges7 <- update(lm.charges6, . ~ . - bili )
+
+# Summary of the updated model
+summary(lm.charges7)
+# - Adjusted R-squared: 0.491; Residual SE: 0.9, similar fit much more simpler
+
+# Conducting drop1 analysis
+drop1(lm.charges7, test = "F")
+
+# Updating the model by dropping variables highest AIC impact
+lm.charges8 <- update(lm.charges7, . ~ . - hday )
+
+# Summary of the updated model
+summary(lm.charges8)
+# - Adjusted R-squared: 0.42; Residual SE: 0.96, worse fit much more simpler
+
+# Conducting drop1 analysis
+drop1(lm.charges8, test = "F")
+
+# Finally the model cannot be further simplified without loss of predicttive power.
 
 ##############CROSS VALIDATION AND BEST MODEL SELECTION###############
 
@@ -528,6 +488,9 @@ results2 <- cross_validate_model(lm.charges2, full_df)
 results3 <- cross_validate_model(lm.charges3, full_df)
 results4 <- cross_validate_model(lm.charges4, full_df)
 results5 <- cross_validate_model(lm.charges5, full_df)
+results6 <- cross_validate_model(lm.charges6, full_df)
+results7 <- cross_validate_model(lm.charges7, full_df)
+results8 <- cross_validate_model(lm.charges8, full_df)
 
 # Print the results for each as a table
 library(knitr)
@@ -535,22 +498,26 @@ library(DT)
 
 # Rounding the values in the data frame
 results_df <- data.frame(
-  Model = c("lm.charges1", "lm.charges2", "lm.charges3", "lm.charges4", "lm.charges5"),
-  RMSE = round(c(results1$RMSE, results2$RMSE, results3$RMSE, results4$RMSE, results5$RMSE), 3),
-  Rsquared = round(c(results1$Rsquared, results2$Rsquared, results3$Rsquared, results4$Rsquared, results5$Rsquared), 3),
-  MAE = round(c(results1$MAE, results2$MAE, results3$MAE, results4$MAE, results5$MAE), 3)
+  Model = c("lm.charges1", "lm.charges2", "lm.charges3", "lm.charges4",
+            "lm.charges5", "lm.charges6", "lm.charges7", "lm.charges8"),
+  RMSE = round(c(results1$RMSE, results2$RMSE, results3$RMSE, 
+                 results4$RMSE, results5$RMSE, results6$RMSE, results7$RMSE, results8$RMSE), 3),
+  Rsquared = round(c(results1$Rsquared, results2$Rsquared, 
+                     results3$Rsquared, results4$Rsquared, results5$Rsquared, results6$Rsquared, results7$Rsquared, results8$Rsquared), 3),
+  MAE = round(c(results1$MAE, results2$MAE, results3$MAE, 
+                results4$MAE, results5$MAE, results6$MAE, results7$MAE, results8$MAE), 3)
 )
 
-datatable(results_df, caption = 'Cross-validation Results', options = list(pageLength = 5))
+datatable(results_df, caption = 'Cross-validation Results', 
+          options = list(pageLength = 8))
 
-########### Cross-validation Results Brief###########
+########## Cross-validation Results Brief ###########
 
-# Models lm.charges1 and lm.charges2 show the highest predictive accuracy (RMSE ~0.718-0.719, R-squared ~0.682-0.683). 
-# lm.charges3 slightly underperforms compared to the first two.
-# lm.charges4, while less accurate (RMSE: 0.897, R-squared: 0.504), offers a balance between simplicity and accuracy.
-# lm.charges5 exhibits significantly lower performance (RMSE: 1.165, R-squared: 0.164), indicating potential overfitting.
-
-# Conclusion: Despite a minor compromise on accuracy, lm.charges4 may be preferred for its balance of model simplicity and predictive power.
+#lm.charges1 and lm.charges2: Best accuracy (RMSE ~0.726, R-squared ~0.676).
+#lm.charges3: Slightly lower performance.
+#lm.charges4: Decent trade-off (RMSE: 0.731, R-squared: 0.671).
+#lm.charges5: Lower accuracy (RMSE: 0.904, R-squared: 0.497), possible overfitting.
+#Conclusion: lm.charges4 stands out for balancing simplicity and effectiveness.
 
 ##########INTERACTION-TERMS EFFECT ON model 'lm.charges4'######
 # Are there any interesting interactions effects on charges due to 
@@ -560,8 +527,8 @@ datatable(results_df, caption = 'Cross-validation Results', options = list(pageL
 
 # Adding an interaction term between age and disease group to the model
 lm_age_dzgroup <- lm(log_charges ~ age * dzgroup 
-                                 + hospdead + num.co + edu + income
-                                 + hday + dementia + meanbp + hrt + temp + bili + ph + bun, 
+                                 + hospdead + edu + income
+                                 + hday + temp + bili + bun, 
                                  data = full_df)
 
 # Checking the summary of the model to see the interaction effect
@@ -577,17 +544,15 @@ summary(lm_age_dzgroup)
 #  by the type of disease a patient has?
 # Adding an interaction term between hospital stay length (hospdead) and disease group
 lm_hospdead_dzgroup <- lm(log_charges ~ hospdead * dzgroup 
-                                      + age + num.co + edu + income
-                                      + hday + dementia + meanbp + hrt + temp + bili + ph + bun, 
+                                      + age + + edu + income + hday 
+                                      + temp + bili + bun, 
                                       data = full_df)
 
 # Checking the summary of the model to see the interaction effect
 summary(lm_hospdead_dzgroup)
 
-# Summary of Interaction Effects between Hospital Death and Disease Group
-# - CHF, Cirrhosis, COPD: Significant increase in charges with hospital death.
-# - Coma: Significant decrease in charges with hospital death.
-# - Colon Cancer, Lung Cancer, MOSF w/Malignancy: No significant interaction.
+
+
 
 #########CROSS VALIDATE AND COMPARE RESULTS##########
 
@@ -599,24 +564,21 @@ results_age_dzgroup <- cross_validate_model(lm_age_dzgroup, full_df)
 # Perform cross-validation for the Hospdead-Disease Group Interaction Model
 results_hospdead_dzgroup <- cross_validate_model(lm_hospdead_dzgroup, full_df)
 
-# Compile the results into a table
-results_df <- data.frame(
-  Model = c("lm.charges4", "Age-Disease Group Interaction", "Hospdead-Disease Group Interaction"),
+# Rounding and creating a data frame for the results
+results_df2 <- data.frame(
+  Model = c("lm.charges4", "lm_age_dzgroup", "lm_hospdead_dzgroup"),
   RMSE = round(c(results4$RMSE, results_age_dzgroup$RMSE, results_hospdead_dzgroup$RMSE), 3),
   Rsquared = round(c(results4$Rsquared, results_age_dzgroup$Rsquared, results_hospdead_dzgroup$Rsquared), 3),
   MAE = round(c(results4$MAE, results_age_dzgroup$MAE, results_hospdead_dzgroup$MAE), 3)
 )
 
-# Use knitr and DT packages to display the results table
-library(knitr)
-library(DT)
+# Displaying the results in a datatable
+datatable(results_df2, caption = 'Cross-validation Results', options = list(pageLength = 5))
 
-datatable(results_df, caption = 'Cross-validation Results for Interaction Models and lm.charges4', options = list(pageLength = 5))
-
-# Cross-validation Results Summary
-# - Baseline (lm.charges4): RMSE: 0.897, R-squared: 0.504, MAE: 0.714.
-# - Age Interaction: Marginal improvement over baseline.
-# - Hospdead Interaction: Best performance with lowest RMSE (0.887) and highest R-squared (0.516).
+########## Cross-validation Results Brief ###########
+# Built on lm.charges4, lm_age_dzgroup and lm_hospdead_dzgroup, 
+# with RMSEs over 0.890 and R-squared around 0.500, are less precise but offer 
+#insights into specific age and disease group dynamics.
 
 #########Visual Exploration of Non-Linear Trends#############
 
