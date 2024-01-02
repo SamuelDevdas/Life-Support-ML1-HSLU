@@ -28,6 +28,10 @@
 *.cb2
 .*.lb
 
+### idea ###
+.idea/
+.ipynb_checkpoints/
+
 ### Windows ###
 *.ini
 
