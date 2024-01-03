@@ -25,15 +25,16 @@ In the bustling world of data science, Pradip Ravichandran and Samuel Devdas, tw
 The following libraries were used in this work:
 
 ```{r LS_2, echo=TRUE, ,include=TRUE, warning=FALSE, message=FALSE}
-#library(readr)        # Data file reading and parsing
-#library(tidyverse)    # Data manipulation and visualization
-#library(ggplot2)      # Visualization and graphics
 #library(Amelia)       # Missing data handling and imputation
-#library(mgcv)         # Fitting GAM
 #library(caret)
-#library(neuralnet)
+library(dplyr)         # To use pipes
 #library(e1071)
+#library(ggplot2)      # Visualization and graphics
+#library(mgcv)         # Fitting GAM
+#library(neuralnet)
+#library(readr)        # Data file reading and parsing
 library(reshape2)
+#library(tidyverse)    # Data manipulation and visualization
 ```
 
 # Load Data Set
@@ -66,15 +67,21 @@ And following predictors should be removed, as they are findings from a previous
 
 ```{r LS_3, echo=TRUE}
 data <- read.csv("support2.csv", header = TRUE, sep = ",")
+data_stage1 <- data
 
 # Remove the mention columns
 data[ , c("aps", "dnr", "dnrday", "prg2m", "prg6m", "sps", "surv2m", "surv6m")] <- list(NULL)
 
+# Not relevant for our study:
+# urine, sod and hrt are physiological measure, we decided to keep urine, because its easiest to interpret 
+# !!!! also removed urine, maybe rethink !!!!
+# dzclass, dzgroup and ca has similar information, we will keep dzgroup
+# Redundant or less impactful variables: 'diabetes', 'd.time', 'death', 'race' 'resp', 'sex', 'wblc'
+data[ , c("avtisst", "ca", "diabetes", "death", "d.time", "dzclass", "hrt", "race", "resp", "scoma", "sex", "sod", "urine", "wblc")] <- list(NULL)
+
+
 # Create a named vector with default values for each variable
-default_values <- c(
-    alb = 3.5, pafi = 333.3, bili = 1.01,
-    crea = 1.01, bun = 6.51, wblc = 9.0, urine = 2502
-)
+default_values <- c(alb = 3.5, pafi = 333.3, bili = 1.01, crea = 1.01, bun = 6.51)
 
 # Loop through the vector to replace missing value
 for (var in names(default_values)) {
@@ -94,7 +101,7 @@ str(data)
 source("DA.R")
 ```
 
-After Inspecting closely, We see that some categorical variables datatype are not factors eg. `$ sex : chr  "male" "female"`
+After Inspecting closely, We see that some categorical variables datatype are not factors eg. `$ dzgroup : chr  "Lung Cancer" "Cirrhosis" "ARF/MOSF w/Sepsis" "Coma" ...`
 
 ```{r LS_4_1_1, echo=FALSE}
 str(unique_values)
@@ -105,50 +112,54 @@ str(unique_values)
 He meticulously examined missing values, ensuring a clean and reliable dataset for further analysis.
 
 ```{r LS_4_2, echo=FALSE}
-str(data[cat_interest])
+str(data_stage2[cat_interest])
 ```
 
-We have only `r sum(complete.cases(data))` complete cases *(rows with no missing values)* out of `r dim(data)[1]` rows. This is a very small number of complete cases. In order to make the dataset usable, we will have to find identify which variables have the most missing values and drop them from the dataset.\
+We have only `r sum(complete.cases(data_stage2))` complete cases *(rows with no missing values)* out of `r dim(data_stage2)[1]` rows. This is a very small number of complete cases. In order to make the dataset usable, we will have to find identify which variables have the most missing values and drop them from the dataset.\
 Variables with the most missing values are:
 
-`r stack(sort(colSums(is.na(data)), decreasing = TRUE))`
+`r data_stage2 %>% summarise_all(~ sum(is.na(.))) %>% stack() %>% subset(values > 0) %>% arrange(desc(values))`
 
-After removing the variables with more than 50% missing values *(adlp, adls, glucose)*, we still have only `r sum(complete.cases(df_updated_mis))` complete cases.\
+Removing the variables with more than 65% missing values *(adlp, adls, glucose, totmcst)*, will help to get a complete dataset.
 To determine further, which variables to drop, we will create a correlation matrix and identify the variables with high correlation.
 
-`r top_correlations`
+`r head(top_correlations, 20)`
 
 We find that the following variables are highly correlated with other variables:
 
-1.  totcst : charges (cost to charge ratio : total charges) - (Cor = 0.83)
-3.  aps (APACHE III day 3 physiology score : SUPPORT physiology score) : sps (predicted SUPPORT physiology score on day 3 ) - (Cor = 0.77)
-4.  aps : avtisst (Average TISS score - quantifies type and number of intensive care treatments. ) - (Cor = 0.59)
-5.  sfdm2 (Level of functional disability of the patient in a 1-5 scale. (Naturally correlated with other physiological scores ))
+1. totcst : charges (Cost to charge ratio : Total charges) - (Cor = 0.87)
+3. totcst : slos (Cost to charge ratio : Days until discharge) - (Cor = 0.78)
+4. charges : slos (Total charges : Days until discharge) - (Cor = 0.62)
+5. charges : hday (Total charges : Day in hospital) - (Cor = 0.51)
 
-Identify out which other variables are also Survival estimates and check their respective number of missing values.
+*totcst* has the highest and second highest correlation, by removing it, it can help to avoid multicollinearity issue in regression model. Additionally *totcst* has 888 missing value.
 
+After removing *(adlp, adls, glucose, totcst, totmcst)*, we still have only `r sum(complete.cases(data_stage3))` complete cases.\
 
 ### Imputing Missing Values
 
 Impute other variables:
 
--   income
--   edu
--   ph
+-   income *(replace missing value with the mode value)*
+-   edu *(replace missing value with the mode value)*
+-   ph *(replace missing value with the mean value)*
 
 We will drop the 'rows' with missing values for the following variables:
 
-1.  charges
-3.  scoma
-6.  meanbp
-7.  hrt
+1. charges
+2. meanbp
+3. temp
+4. sfdm2
 
 Samuel's keen eye uncovered patterns and relationships, providing a solid foundation for the subsequent stages of their project.
 ```{r LS_4_3, echo=FALSE}
-data <- df_updated_mis
-sorted_sums <- colSums(is.na(data))
+sorted_sums <- colSums(is.na(data_stage3))
 stack(sort(sorted_sums[sorted_sums != 0], decreasing = TRUE))
 ```
+
+Finally we have `r sum(complete.cases(data))` complete cases *(rows with no missing values)* out of `r dim(data)[1]` rows and `r dim(data)[2]` columns.
+
+To achieve our regulation and goal, we reduced `r dim(data_stage1)[2] - dim(data)[2]` variables and `r dim(data_stage1)[1] - dim(data)[1]` rows
 
 # Linear Model
 
