@@ -674,107 +674,107 @@ datatable(selected_results_df, caption = 'Selected Cross-validation Results Comp
  
 
 ##############GENERALIZED ADDITIVE MODEL############
-# We update our most performant model to check if it can be further improved
+# We use variables from our most performant model:"lm.nonlinear.trim",
+# to try to build a model that captures non-linear dynamics completely.
 
 # Load GAM library
 library(mgcv)
 
-# Update the model to a default GAM
-gam.charges4 <- gam(log_charges ~ hospdead + sex + age + dzgroup + 
-                                s(meanbp) + 
+# Using the variables from lm.nonlinear.trim to a build base GAM
+gam.model1 <- gam(log_charges ~ s(slos) + 
                                 s(bun) +
                                 s(ph) +
                                 s(alb) +
                                 s(temp) + 
-                                s(wblc) + 
-                                s(edu) +
-                                s(hrt) +
                                 s(hday) +
-                                s(bili) +
-                                s(num.co),
+                                s(bili),
                               data = full_df)
 
 # Summary of the GAM model
-summary(gam.charges4)
-# GAM Summary Insights
-# 1. Significant Linear Predictors: hospdead, age, dzgroup categories.
-# 2. Non-Linear Relationships: Complex relationships identified for meanbp, bun, ph, temp, edu, hrt, hday, bili.
-# 3. Model Fit: Adjusted R-squared of 0.54; GCV score of 0.7519.
-# 4. Key Takeaway: Model captures both linear and non-linear dynamics, indicating the complexity of factors affecting log_charges.
+summary(gam.model1)
 
-library(gam)
-library(Metrics)
+#########################################
+library(mgcv)
 
-set.seed(123) # For reproducibility
+#Prepare Data for K-Fold Cross-validation
 
-# Define the number of folds for cross-validation
-n_folds <- 10
-folds <- cut(seq(1, nrow(full_df)), breaks = n_folds, labels = FALSE)
+set.seed(123)  # for reproducibility
+k <- 10  # number of folds
+n <- nrow(full_df)
+fold_ids <- sample(rep(1:k, length.out = n))
 
-# Initialize variables to store metrics
-rmse_values <- numeric(n_folds)
-rsquared_values <- numeric(n_folds)
-mae_values <- numeric(n_folds)
-
-# Cross-validation loop
-for(i in 1:n_folds){
-  # Split data into training and test sets
-  test_indices <- which(folds == i, arr.ind = TRUE)
-  train_data <- full_df[-test_indices, ]
-  test_data <- full_df[test_indices, ]
+# Define a function to perform k-fold cross-validation
+perform_cv_for_gam <- function(model, data, k) {
+  # Initialize vectors to store performance metrics
+  rmse_values <- numeric(k)
+  r_squared_values <- numeric(k)
   
-  # Fit GAM model
-  gam_model <- gam(log_charges ~ hospdead + sex + age + dzgroup + s(meanbp) + s(bun) + 
-                     s(ph) + s(alb) + s(temp) + s(wblc) + s(edu) + s(hrt) + s(hday) + 
-                     s(bili) + s(num.co), data = train_data)
+  # Generate fold IDs for cross-validation
+  set.seed(123)  # For reproducibility
+  fold_ids <- sample(rep(1:k, length.out = nrow(data)))
   
-  # Predict on test set
-  predictions <- predict(gam_model, test_data)
+  # Perform k-fold cross-validation
+  for (i in 1:k) {
+    train_data <- data[fold_ids != i, ]
+    test_data <- data[fold_ids == i, ]
+    
+    # Make predictions and calculate RMSE and R-squared
+    predictions <- predict(model, test_data, type = "response")
+    rmse_values[i] <- sqrt(mean((predictions - test_data$log_charges)^2))
+    r_squared_values[i] <- cor(predictions, test_data$log_charges)^2
+  }
   
-  # Calculate metrics
-  rmse_values[i] <- rmse(test_data$log_charges, predictions)
-  rsquared_values[i] <- cor(test_data$log_charges, predictions)^2
-  mae_values[i] <- mae(test_data$log_charges, predictions)
+  # Calculate and return the average RMSE and R-squared
+  list(mean_rmse = mean(rmse_values), mean_r_squared = mean(r_squared_values))
 }
 
-# Calculate average metrics
-mean_rmse <- mean(rmse_values)
-mean_rsquared <- mean(rsquared_values)
-mean_mae <- mean(mae_values)
+# Results of 10-fold cross-validation
+cv_results <- perform_cv_for_gam(gam.model1, full_df, 10)
+gam_mean_rmse <- cv_results_gam$mean_rmse
+gam_mean_r_squared <- cv_results_gam$mean_r_squared
 
-# Manually computed cross-validation metrics for the GAM model
-mean_rmse_gam <- mean_rmse
-mean_rsquared_gam <- mean_rsquared
-mean_mae_gam <- mean_mae
-
-# Combine the results into one data frame in the specified order
-all_results_df <- data.frame(
+# Combine the Selected Results into One Data Frame
+selected_results_df <- data.frame(
   Model = c(
-    "lm.charges1", "lm.charges2", "lm.charges3", "lm.charges4", "lm.charges5",
-    "Age-Disease Group Interaction", "Hospdead-Disease Group Interaction",
-    "Nonlinear lm.charges4", "Trimmed Nonlinear Model", "GAM Model"
+    "lm.charges4", "Nonlinear lm.charges4", "Trimmed Nonlinear Model", "GAM Model"
   ),
   RMSE = round(c(
-    results1$RMSE, results2$RMSE, results3$RMSE, results4$RMSE, results5$RMSE,
-    results_age_dzgroup$RMSE, results_hospdead_dzgroup$RMSE,
-    results_nonlinear_charges4$RMSE, results_trimmed$RMSE, mean_rmse_gam
+    results4$RMSE, results_nonlinear_charges4$RMSE, results_trimmed$RMSE, gam_mean_rmse
   ), 3),
   Rsquared = round(c(
-    results1$Rsquared, results2$Rsquared, results3$Rsquared, results4$Rsquared, results5$Rsquared,
-    results_age_dzgroup$Rsquared, results_hospdead_dzgroup$Rsquared,
-    results_nonlinear_charges4$Rsquared, results_trimmed$Rsquared, mean_rsquared_gam
+    results4$Rsquared, results_nonlinear_charges4$Rsquared, results_trimmed$Rsquared, gam_mean_r_squared
   ), 3),
-  MAE = round(c(
-    results1$MAE, results2$MAE, results3$MAE, results4$MAE, results5$MAE,
-    results_age_dzgroup$MAE, results_hospdead_dzgroup$MAE,
-    results_nonlinear_charges4$MAE, results_trimmed$MAE, mean_mae_gam
-  ), 3)
+  MAE = c(
+    round(results4$MAE, 3), round(results_nonlinear_charges4$MAE, 3), round(results_trimmed$MAE, 3), NA
+  )
 )
 
-# Display the combined results table
-library(DT)
-datatable(all_results_df, caption = 'Comprehensive Cross-validation Results Comparison', options = list(pageLength = 10))
+# Display the selected results table
+datatable(selected_results_df, caption = 'Selected Cross-validation Results Comparison', options = list(pageLength = 10))
 
+########## Cross-validation Results Brief ###########
+
+# Cross-validation Results Summary:
+
+# lm.charges4:
+# - RMSE: 0.731, R-squared: 0.671, MAE: 0.57
+# - Provides a basic level of predictive accuracy, serving as a baseline.
+
+# Nonlinear lm.charges4:
+# - RMSE: 0.649, R-squared: 0.741, MAE: 0.502
+# - Shows improved accuracy over the basic model, indicating the benefit of introducing nonlinearity.
+
+# Trimmed Nonlinear Model:
+# - RMSE: 0.647, R-squared: 0.742, MAE: 0.503
+# - Offers a slight improvement in accuracy with a simpler, more interpretable model compared to the Nonlinear lm.charges4.
+
+# GAM Model:
+# - RMSE: 0.659, R-squared: 0.732
+# - Despite its flexibility in capturing complex patterns, it slightly underperforms compared to the Nonlinear models, with potential overfitting due to complexity.
+
+# Conclusion:
+# - The Trimmed Nonlinear Model emerges as the best choice, offering high accuracy with a simpler, more interpretable model structure.
+# - The GAM Model, while powerful, may require careful handling to avoid overfitting and ensure reliable predictions on new data.
 
 
 ###########GLM : LOGISTIC REGRESSION##################
