@@ -793,84 +793,174 @@ numeric_vars
 
 library(ggplot2)
 
-# Assuming 'final_df' is your dataframe and it contains a binary variable 'hospdead'
-# and 'numeric_vars' is a vector of all numeric variable names you want to plot.
+# Set the sample size for better visibility of the scatterplots
+sample_size <- 500  # Adjust this number based on your data size and needs
 
 for (var in numeric_vars) {
-  print(ggplot(final_df, aes_string(x = var, y = 'hospdead')) +
-    geom_jitter(aes(color = as.factor(hospdead)), width = 0.1, height = 0.1) +
-    scale_color_manual(values = c('0' = 'red', '1' = 'blue')) +
-    labs(title = paste("Scatterplot of", var, "against hospdead status"),
-         x = var, y = "Hospdead Status") +
-    theme_minimal())
+  # Take a random sample of the data
+  sampled_data <- final_df[sample(nrow(final_df), sample_size), ]
+  
+  # Create the scatterplot with the sampled data
+  print(ggplot(sampled_data, aes_string(x = var, y = 'hospdead')) +
+          geom_jitter(aes(color = as.factor(hospdead)), width = 0.1, height = 0.1) +
+          scale_color_manual(values = c('0' = 'red', '1' = 'blue')) +
+          labs(title = paste("Scatterplot of", var, "against hospdead status (Sampled)"),
+               x = var, y = "Hospdead Status") +
+          theme_minimal())
 }
 
+
 # OBSERVATION: The visual inspection of scatterplots comparing each numeric 
-# variable with the hospdead status reveals no clear patterns or 
-# distinctions that could reliably classify a patient's hospital death status.
+# variable with the hospdead status reveals a few potential separation patterns in variables like:
+# log_charges, num.co, age, adlsc and alb.
 
 # Building an initial logistic regression model using all variables
 # to evaluate their initial significance.
-logistic_model1 <- glm(hospdead ~ . , family = "binomial", data = final_df)
+logistic_full <- glm(hospdead ~ . , family = "binomial", data = final_df)
 summary(logistic_model1)
 
-# The initial model yields no significant terms, indicating potential issues with multicollinearity or irrelevance.
+# The initial model yields many significant terms, indicating variables of interest.
+# like log_charges, age, adlsc, scoma, bun, bili, slos, dzgroup, income
+
 # Therefore, we start building the model from scratch, beginning with the most promising predictor: age.
 logistic_1 <- glm(hospdead ~ age , family = "binomial", data = final_df)
 summary(logistic_1)
 
-# Adding 'sex' to the model, as gender differences may influence hospital death outcomes.
-logistic_2 <- glm(hospdead ~ age + sex , family = "binomial", data = final_df)
+# Adding 'hday' to the model, as time spent under critical care could be a strong indicator of patient health status.
+
+logistic_2_updated <- update(logistic_1, . ~ . + hday)
 summary(logistic_2)
 
-# Incorporating 'adlsc' (Activities of Daily Living Score) as it can be a strong indicator of patient health status.
-logistic_3 <- glm(hospdead ~ age + adlsc, family = "binomial", data = final_df)
+# Incorporating 'scoma' (Activities of Daily Living Score) as it can be a strong indicator of patient health status.
+logistic_3 <- update(logistic_2, . ~ . + scoma)
 summary(logistic_3)
 
-# Adding 'slos' (Days from Study Entry to Discharge) to explore if shorter treatment time correlate with mortality.
-logistic_4 <- glm(hospdead ~ age + adlsc + slos, family = "binomial", data = final_df)
+# Adding 'adlsc' () to explore if Daily living activity score correlate with mortality.
+logistic_4 <- update(logistic_3, . ~ . + adlsc)
 summary(logistic_4)
 
-# Including 'hday' (Hospital Day) to assess the impact of the duration of hospitalization on patient outcomes.
-logistic_5 <- glm(hospdead ~ age + adlsc + hday, family = "binomial", data = final_df)
-summary(logistic_5)
+# Including 'num.co' to assess the impact of number of comorbidities patient outcomes.
+logistic_6 <- update(logistic_5, . ~ . + num.co)
+summary(logistic_6)
+
+# Check if log_charges is significant now
+logistic_7 <- update(logistic_6, . ~ . + log_charges)
+summary(logistic_7)
+# Log_charges is highly insignificant, but num.co is insignificant,
+# due to redundancy, so remove num.co from the model
+logistic_7 <- update(logistic_7, . ~ . - num.co)
+summary(logistic_7)
 
 # Expanding the model with clinical variables like 'alb' (Albumin levels), 'bili' (Bilirubin levels), 
-# 'crea' (Creatinine levels), 'pafi' (Partial Pressure of Arterial Oxygen), and 'dzclass' for disease classification.
+# 'crea' (Creatinine levels), 'pafi' (Partial Pressure of Arterial Oxygen), ph is insignificant, so remove it from the model
 # These clinical measures are often critical in understanding patient health and predicting outcomes.
-logistic_6 <- glm(hospdead ~ age + adlsc + hday + alb + bili + crea + dzclass + pafi, family = "binomial", data = final_df)
-summary(logistic_6)
+logistic_8 <- update(logistic_7, . ~ . + alb + bili + crea + 
+                       bun + pafi + meanbp)
+summary(logistic_8)
+
+# Expanding the model with categorical variable income 
+logistic_8 <- update(logistic_7, . ~ . + income)
+summary(logistic_8)
+
+# Income turns out to be insignificant, so we remove it from the model and 
+# add 'dzgroup' (Disease Group) to assess the impact of disease type on patient outcomes.
+logistic_9 <- update(logistic_8, . ~ . - income + dzgroup)
+summary(logistic_9)
+
+# As expected dzgroup is significant 
+# Check if edu is significant now
+logistic_10 <- update(logistic_9, . ~ . + edu)
+summary(logistic_10)
+
+# edu is insignificant, so remove it from the model and check dementia
+logistic_10 <- update(logistic_10, . ~ . - edu + dementia)
+summary(logistic_10)
+
+# Dementia is mildly significant, so keep it in the model
 
 # Applying backward stepwise regression to the expanded model to refine it by removing statistically insignificant variables.
 # This helps in achieving a simpler model that still captures essential predictors for hospital death.
-step(logistic_6, direction = "backward")
+logistic.simple<- step(logistic_10, direction = "backward")
+summary(logistic.simple)
+# Backward stepwise regression doesnt remove any variables, so keep the model as it is
 
-
+#################CROSS VALIDATION###########################
 ##########
 library(caret)
 
-# Set a seed for reproducibility
+# Setting a seed for reproducibility
 set.seed(123)
 
-# Define the control method for cross-validation
-train_control <- trainControl(method = "cv", number = 10, classProbs = TRUE, summaryFunction = twoClassSummary)
+# Create a function for cross-validation
+cross_validate_model <- function(model, full_df, number_folds = 10) {
+  # Extract the formula from the model
+  model_formula <- formula(model)
+  
+  # Set up cross-validation control
+  train_control <- trainControl(method = "cv", number = number_folds)
+  
+  # Train the model using cross-validation
+  cv_model <- train(model_formula, data = full_df, method = "glm", trControl = train_control)
+  
+  # Return the results
+  return(cv_model$results)
+}
 
-# Ensure 'hospdead' is a factor
-final_df$hospdead <- as.factor(final_df$hospdead)
+# Perform cross-validation for each of the remaining models
+results1 <- cross_validate_model(logistic_1, full_df)
+results2 <- cross_validate_model(logistic_2, full_df)
+results3 <- cross_validate_model(logistic_3, full_df)
+results4 <- cross_validate_model(logistic_4, full_df)
+results5 <- cross_validate_model(logistic_5, full_df)
+results6 <- cross_validate_model(logistic_6, full_df)
+results7 <- cross_validate_model(logistic_7, full_df)
+results8 <- cross_validate_model(logistic_8, full_df)
+results9 <- cross_validate_model(logistic_9, full_df)
+results10 <- cross_validate_model(logistic_10, full_df)
 
-# Rename the factor levels to be valid R variable names
-levels(final_df$hospdead) <- make.names(levels(final_df$hospdead))
+# Print the results for each as a table
+library(knitr)
+library(DT)
 
-# Now proceed with the cross-validation
-cv_logistic <- train(hospdead ~ age + adlsc + hday + alb + bili + crea + dzclass + pafi, 
-                     data = final_df, 
-                     method = "glm", 
-                     family = "binomial",
-                     trControl = train_control,
-                     metric = "ROC")
+# Create a summary table using the correct metrics from the cross-validation results
+results_df <- data.frame(
+  Model = c("logistic_1", "logistic_2", "logistic_3", "logistic_4",
+            "logistic_5", "logistic_6", "logistic_7", "logistic_8", "logistic_9", "logistic_10"),
+  Accuracy = round(c(results1$Accuracy, results2$Accuracy, results3$Accuracy, 
+                     results4$Accuracy, results5$Accuracy, results6$Accuracy, results7$Accuracy, results8$Accuracy, results9$Accuracy, results10$Accuracy), 3),
+  Kappa = round(c(results1$Kappa, results2$Kappa, results3$Kappa, 
+                  results4$Kappa, results5$Kappa, results6$Kappa, results7$Kappa, results8$Kappa, results9$Kappa, results10$Kappa), 3),
+  AccuracySD = round(c(results1$AccuracySD, results2$AccuracySD, results3$AccuracySD, 
+                       results4$AccuracySD, results5$AccuracySD, results6$AccuracySD, results7$AccuracySD, results8$AccuracySD, results9$AccuracySD, results10$AccuracySD), 3)
+)
 
-# Print the results
-print(cv_logistic)
+# Display the summary table
+datatable(results_df, caption = 'Cross-validation Results', options = list(pageLength = 10))
+
+# Integrated Model Development and Performance Summary:
+
+# Initial Steps:
+# - logistic_1 (baseline with 'age'): Accuracy at 0.743; a starting point with room for improvement.
+# - logistic_2 (addition of 'hday'): Slight increase in Accuracy to 0.744 and Kappa to 0.069, indicating marginal improvement.
+
+# Incorporating Health Status:
+# - logistic_3 (addition of 'scoma'): Significant leap in Accuracy to 0.781 and Kappa to 0.295, showing the importance of health status indicators.
+# - logistic_4 (introduction of 'adlsc'): Maintains Accuracy at 0.782 and Kappa at 0.301, consolidating gains.
+
+# Clinical and Demographic Expansion:
+# - logistic_6-8: Further fine-tuning with clinical and demographic variables. Accuracy stabilizes around 0.775, and Kappa sees modest gains, highlighting the complex nature of these factors.
+
+# Refined and Optimal Models:
+# - logistic_9 (inclusion of 'dzgroup'): Peaks in Accuracy (0.783) and Kappa (0.35), underscoring the impact of disease grouping.
+# - logistic_10 (testing 'edu' and 'dementia'): Sustains peak Accuracy and Kappa (0.351), confirming the optimized combination of variables.
+
+# Final Takeaways:
+# - The evolution from logistic_1 to logistic_10 illustrates a careful balance of adding predictive variables while monitoring overfitting (as shown by stable AccuracySD).
+# - The best models, logistic_9 and logistic_10, demonstrate the effectiveness of a comprehensive approach, blending demographic, clinical, and disease-specific predictors.
+# - This step-wise development process resulted in models that not only predict accurately but also provide meaningful insights into the factors affecting patient outcomes.
+
+
+
 
 
 
