@@ -957,15 +957,4 @@ datatable(results_df, caption = 'Cross-validation Results', options = list(pageL
 # Final Takeaways:
 # - The evolution from logistic_1 to logistic_10 illustrates a careful balance of adding predictive variables while monitoring overfitting (as shown by stable AccuracySD).
 # - The best models, logistic_9 and logistic_10, demonstrate the effectiveness of a comprehensive approach, blending demographic, clinical, and disease-specific predictors.
-# - This step-wise development process resulted in models that not only predict accurately but also provide meaningful insights into the factors affecting patient outcomes.
-
-
-
-
-
-
-
-
-
-
-
+# - This step-wise development process resulted in models that not only predict accurately but also provide meaningful insights into the factors affecting patient outcomes
