@@ -499,7 +499,7 @@ results_df <- data.frame(
                 results4$MAE, results5$MAE, results6$MAE, results7$MAE, results8$MAE), 3)
 )
 
-datatable(results_df, caption = 'Cross-validation Results', 
+datatable(results_df, caption = 'Linear Model development Cross-validation Results', 
           options = list(pageLength = 8))
 
 ########## Cross-validation Results Brief ###########
@@ -564,7 +564,7 @@ results_df2 <- data.frame(
 )
 
 # Displaying the results in a datatable
-datatable(results_df2, caption = 'Cross-validation Results', options = list(pageLength = 5))
+datatable(results_df2, caption = 'Selected Interaction Cross-validation Results', options = list(pageLength = 5))
 
 ########## Cross-validation Results Brief ###########
 # Built a Non-Linear model upon lm.charges4, lm_age_dzgroup and lm_hospdead_dzgroup, 
@@ -661,7 +661,7 @@ selected_results_df <- data.frame(
 )
 
 # Display the selected results table
-datatable(selected_results_df, caption = 'Selected Cross-validation Results Comparison', options = list(pageLength = 10))
+datatable(selected_results_df, caption = 'Selected Non-Linear Cross-validation Results Comparison', options = list(pageLength = 10))
 
 ########## Cross-validation Results Brief ###########
 
@@ -730,8 +730,8 @@ perform_cv_for_gam <- function(model, data, k) {
 
 # Results of 10-fold cross-validation
 cv_results <- perform_cv_for_gam(gam.model1, full_df, 10)
-gam_mean_rmse <- cv_results_gam$mean_rmse
-gam_mean_r_squared <- cv_results_gam$mean_r_squared
+gam_mean_rmse <- cv_results$mean_rmse
+gam_mean_r_squared <- cv_results$mean_r_squared
 
 # Combine the Selected Results into One Data Frame
 selected_results_df <- data.frame(
@@ -745,12 +745,12 @@ selected_results_df <- data.frame(
     results4$Rsquared, results_nonlinear_charges4$Rsquared, results_trimmed$Rsquared, gam_mean_r_squared
   ), 3),
   MAE = c(
-    round(results4$MAE, 3), round(results_nonlinear_charges4$MAE, 3), round(results_trimmed$MAE, 3), NA
+    round(results4$MAE, 3), round(results_nonlinear_charges4$MAE, 3), round(results_trimmed$MAE, 3), NA  # Assuming MAE is not calculated for the GAM model
   )
 )
 
 # Display the selected results table
-datatable(selected_results_df, caption = 'Selected Cross-validation Results Comparison', options = list(pageLength = 10))
+datatable(selected_results_df, caption = 'Selected GAM model Cross-validation Results Comparison', options = list(pageLength = 10))
 
 ########## Cross-validation Results Brief ###########
 
@@ -817,9 +817,9 @@ for (var in numeric_vars) {
 # Building an initial logistic regression model using all variables
 # to evaluate their initial significance.
 logistic_full <- glm(hospdead ~ . , family = "binomial", data = final_df)
-summary(logistic_model1)
+summary(logistic_full)
 
-# The initial model yields many significant terms, indicating variables of interest.
+# The initial full model yields many significant terms, indicating variables of interest.
 # like log_charges, age, adlsc, scoma, bun, bili, slos, dzgroup, income
 
 # Therefore, we start building the model from scratch, beginning with the most promising predictor: age.
@@ -828,7 +828,7 @@ summary(logistic_1)
 
 # Adding 'hday' to the model, as time spent under critical care could be a strong indicator of patient health status.
 
-logistic_2_updated <- update(logistic_1, . ~ . + hday)
+logistic_2 <- update(logistic_1, . ~ . + hday)
 summary(logistic_2)
 
 # Incorporating 'scoma' (Activities of Daily Living Score) as it can be a strong indicator of patient health status.
@@ -840,29 +840,30 @@ logistic_4 <- update(logistic_3, . ~ . + adlsc)
 summary(logistic_4)
 
 # Including 'num.co' to assess the impact of number of comorbidities patient outcomes.
-logistic_6 <- update(logistic_5, . ~ . + num.co)
-summary(logistic_6)
+logistic_5 <- update(logistic_4, . ~ . + num.co)
+summary(logistic_5)
 
 # Check if log_charges is significant now
-logistic_7 <- update(logistic_6, . ~ . + log_charges)
-summary(logistic_7)
+logistic_6 <- update(logistic_5, . ~ . + log_charges)
+summary(logistic_6)
+
 # Log_charges is highly insignificant, but num.co is insignificant,
 # due to redundancy, so remove num.co from the model
-logistic_7 <- update(logistic_7, . ~ . - num.co)
-summary(logistic_7)
+logistic_6 <- update(logistic_6, . ~ . - num.co)
+summary(logistic_6)
 
 # Expanding the model with clinical variables like 'alb' (Albumin levels), 'bili' (Bilirubin levels), 
 # 'crea' (Creatinine levels), 'pafi' (Partial Pressure of Arterial Oxygen), ph is insignificant, so remove it from the model
 # These clinical measures are often critical in understanding patient health and predicting outcomes.
-logistic_8 <- update(logistic_7, . ~ . + alb + bili + crea + 
+logistic_7 <- update(logistic_6, . ~ . + alb + bili + crea + 
                        bun + pafi + meanbp)
-summary(logistic_8)
+summary(logistic_7)
 
 # Expanding the model with categorical variable income 
 logistic_8 <- update(logistic_7, . ~ . + income)
 summary(logistic_8)
 
-# Income turns out to be insignificant, so we remove it from the model and 
+# Income turns out to be very mildly significant, so we remove it from the model and 
 # add 'dzgroup' (Disease Group) to assess the impact of disease type on patient outcomes.
 logistic_9 <- update(logistic_8, . ~ . - income + dzgroup)
 summary(logistic_9)
@@ -878,7 +879,8 @@ summary(logistic_10)
 
 # Dementia is mildly significant, so keep it in the model
 
-# Applying backward stepwise regression to the expanded model to refine it by removing statistically insignificant variables.
+# Applying backward stepwise regression to the expanded model to simplify
+# it by removing statistically insignificant variables.
 # This helps in achieving a simpler model that still captures essential predictors for hospital death.
 logistic.simple<- step(logistic_10, direction = "backward")
 summary(logistic.simple)
@@ -935,8 +937,9 @@ results_df <- data.frame(
 )
 
 # Display the summary table
-datatable(results_df, caption = 'Cross-validation Results', options = list(pageLength = 10))
-s
+datatable(results_df, caption = 'Logistic Regression models Cross-validation Results', options = list(pageLength = 10))
+
+
 # Integrated Model Development and Performance Summary:
 
 # Initial Steps:
@@ -958,3 +961,97 @@ s
 # - The evolution from logistic_1 to logistic_10 illustrates a careful balance of adding predictive variables while monitoring overfitting (as shown by stable AccuracySD).
 # - The best models, logistic_9 and logistic_10, demonstrate the effectiveness of a comprehensive approach, blending demographic, clinical, and disease-specific predictors.
 # - This step-wise development process resulted in models that not only predict accurately but also provide meaningful insights into the factors affecting patient outcomes
+
+
+##Selecting logistic_10 as our best model based on cross-validation results
+# We want to deep dive understand the performance of the model using a confusion matrix
+# and ROC curve.
+
+# Calculate the Confusion Matrix
+# Load the required libraries
+library(caret)
+
+# First, make predictions on the dataset
+predictions <- predict(logistic_10, newdata = final_df, type = "response")
+predicted_class <- ifelse(predictions > 0.5, 1, 0)  # Assuming 0.5 as threshold
+
+# Generate the confusion matrix
+conf_matrix0.5 <- confusionMatrix(as.factor(predicted_class), as.factor(final_df$hospdead))
+print(conf_matrix0.5)
+
+# Confusion Matrix (0.5) Interpretation:
+
+# Model Performance:
+# - Accuracy: 0.792. Model correctly predicts survival and non-survival in 79.2% of cases.
+# - Kappa: 0.3813. Moderate agreement beyond chance between prediction and actual outcomes.
+
+# Class-wise Performance:
+# - Sensitivity: 92.34%. High ability to correctly identify non-survivors (True Negative Rate).
+# - Specificity: 41.22%. Lower ability to correctly identify survivors (True Positive Rate).
+# - Positive Predictive Value: 81.95%. If model predicts non-survival, 81.95% chance it's correct.
+# - Negative Predictive Value: 65.06%. If model predicts survival, 65.06% chance it's correct.
+
+# Statistical Tests:
+# - P-Value [Acc > NIR]: < 2.2e-16. Model significantly better than No Information Rate.
+# - Mcnemar's Test: < 2.2e-16. Significant difference between type I and type II errors.
+
+# Overall Inferences:
+# - Model is more effective at identifying non-survivors than survivors.
+# - Imbalance in sensitivity and specificity suggests potential bias towards predicting non-survival.
+# - High prevalence (74.29%) might influence the predictive values.
+# - Balanced Accuracy (66.78%) indicates room for improvement in managing class imbalance.
+
+# Conclusion:
+# - While the model is quite accurate, there's a need for improved balance in sensitivity and specificity.
+# - Consideration for class imbalance and further feature refinement could enhance model performance.
+
+# ROC Curve and AUC
+# Load the necessary library
+# Load the necessary library
+library(pROC)
+
+# Calculate the ROC curve
+roc_response <- roc(response = final_df$hospdead, predictor = as.numeric(predictions), percent = TRUE)
+
+# Specify the thresholds you want to display on the plot
+thresholds_to_print <- c(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9)
+# Plotting the ROC curve with thresholds
+plot(roc_response, 
+     main = "ROC Curve Analysis", 
+     xlab = "False Positive Rate (1 - Specificity)", 
+     ylab = "True Positive Rate (Sensitivity)", 
+     col = "#1c61b6", 
+     lwd = 2,
+     print.thres = thresholds_to_print, 
+     print.thres.pattern = "%.2f", # Adding percent sign to thresholds
+     print.thres.cex = 0.6,
+     print.auc = TRUE,
+     print.auc.pattern = "AUC: %.3f", # Customize AUC print format
+     print.auc.col = "blue",
+     print.auc.cex = 1.2,
+     grid = TRUE,
+     identity = TRUE, # Turn off the identity line
+     max.auc.polygon = TRUE, # Do not fill the area up to the maximum AUC possible
+     auc.polygon = TRUE,
+     auc.polygon.col = "lightblue"
+)
+
+# ROC Curve and AUC Interpretation for Hospdead Variable:
+
+# - The AUC of 82.075% suggests the model is effective in distinguishing between patients who died in the hospital (hospdead = 1) and those who did not (hospdead = 0).
+# - The True Positive Rate (TPR) or sensitivity indicates the model's accuracy in identifying actual in-hospital deaths.
+# - The False Positive Rate (FPR) or 1 - specificity represents how often the model incorrectly predicts death among those who survived.
+
+# Impact of Class Distribution:
+# - The higher number of survivors (hospdead = 0) may influence the model's predictive performance, particularly its specificity.
+# - Careful threshold selection is crucial to balance TPR and FPR given the class imbalance.
+
+# Threshold Strategy for Clinical Utility:
+# - In clinical settings where the cost of missing an actual death (False Negative) is high, a lower threshold may be warranted to ensure high sensitivity.
+# - Conversely, to avoid overburdening the healthcare system with false alarms, a threshold that ensures an acceptable level of specificity without sacrificing too much sensitivity might be preferred.
+
+# Conclusion:
+# - The model's strong AUC performance, considering the distribution of the `hospdead` variable, indicates its potential as a supportive tool for prognostic assessment in a hospital setting.
+# - The plotted thresholds on the ROC curve provide insights into how different cut-off points will affect the model's prediction of in-hospital mortality.
+
+
