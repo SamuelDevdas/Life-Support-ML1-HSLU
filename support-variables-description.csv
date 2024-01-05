@@ -1,0 +1,21 @@
+Name,Type,Description
+age,Continuous,Age of the patients in years
+hospdead,Binary,Death in hospital
+slos,Continuous,Days from Study Entry to Discharge
+dzgroup,Categorical,The patient's disease sub category
+num.co,Continuous,The number of simultaneous diseases (or comorbidities)
+edu,Categorical,Years of education
+income,Categorical,Income of the patient
+scoma,Continuous,SUPPORT day 3 Coma Score based on Glasgow scale (predicted by a model)
+charges,Continuous,Hospital charges
+hday,Integer,Day in hospital at which patient entered study
+dementia,Continuous,Whether the patient exhibits dementia as a comorbidity
+meanbp,Continuous,Mean arterial blood pressure measured at day 3
+temp,Continuous,Temperature in Celsius degrees measured at day 3
+pafi,Continuous,$PaO_2/FiO_2$ ratio measured at day 3
+alb,Continuous,Serum albumin levels measured at day 3
+bili,Continuous,Bilirubin levels measured at day 3
+crea,Continuous,Serum creatinine levels measured at day 3
+ph,Continuous,Arterial blood pH
+bun,Integer,Blood urea nitrogen levels measured at day 3
+adlsc,Continuous,"Activities of Daily Living score"
