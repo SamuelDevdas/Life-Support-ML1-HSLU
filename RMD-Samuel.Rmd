@@ -1,3 +1,8 @@
+---
+output:
+  word_document: default
+  html_document: default
+---
 ## Data Loading and Inspection
 Load dataset:
 ```{r}
@@ -148,7 +153,7 @@ mode_value <- getMode(df_support$edu)
 
 df_support$edu[is.na(df_support$edu)] <- mode_value
 
-head(df_support)
+sum(is.na(df_support))
 
 ```
 
@@ -173,42 +178,12 @@ sort(colnames(final_df))
 
 
 
-```{r}
 
-final_df <- subset(final_df, select = -c(
-    aps,
-    dnr,
-    dnrday,
-    surv2m,
-    sod, 
-    ca, 
-    diabetes, 
-    dzclass, 
-    urine, 
-    hrt,
-    d.time,
-    death, 
-    resp,
-    sex,
-    race, wblc
-))
-```
 
-Check
-```{r}
-sort(colnames(final_df))
-```
+
 
 ############## Exploratory Data Analysis##############
-```{r}
-str(final_df)
-```
 
-Create scatterplots for  charges variable against all the numeric variables one by one
-To find out if linear relationship exists with some variables
-```{r}
-
-```
 Check the distribution of charges
 ```{r}
 hist(final_df$charges, breaks = 50, main = "Histogram of Charges", xlab = "Charges", col = "blue", border = "black")
@@ -216,47 +191,30 @@ hist(final_df$charges, breaks = 50, main = "Histogram of Charges", xlab = "Charg
 
 The "charges" variable is highly right skewed with majority <100000
 ```{r}
+# To linearize the relationships, we take the logarithm of the 'charges' variable. However, since the log of zero or negative numbers is undefined, we add a small constant before taking the log to avoid errors. We then check the distribution of the resulting log-transformed charges.
 
-```
-Take LOG of charges to Linearize relationships
-```{r}
-final_df$log_charges <- log(final_df$charges)
-```
-
-To handle cases where 'charges' might be 0 or negative,
-you might want to add a small constant:
-```{r}
+# Taking the logarithm of 'charges' to linearize relationships
 final_df$log_charges <- log(final_df$charges + 1)
-```
 
-Check the distribution of log_charges
-```{r}
+# Plotting the histogram to check the distribution of log-transformed 'charges'
 hist(final_df$log_charges, breaks = 50, 
      main = "Histogram of log_Charges", 
      xlab = "Charges", col = "blue", border = "black")
 ```
-Now the the charges data look more normally distributed
-```{r}
 
-```
-Make data ready for plotting
+Now the the charges data looks normally distributed
+
+Make data ready for plotting and plot log_charges against all numeric variables
 ```{r}
+# Make data ready for plotting
 numeric_vars <- names(final_df)[sapply(final_df, is.numeric)]
 numeric_vars
-```
 
-Exclude 'log_charges' from Numeric Columns
-```{r}
-
+# Exclude 'log_charges' from Numeric Columns
 numeric_vars <- numeric_vars[!(numeric_vars %in% c("log_charges", "charges"))]
-```
-
-```{r}
 numeric_vars
-```
 
-Loop through each numeric variable and create a scatterplot against 'log_charges'
-```{r}
+# Loop through each numeric variable and create a scatterplot against 'log_charges'
 library(ggplot2)
 for (var in numeric_vars) {
   print(
@@ -272,70 +230,52 @@ From the scatterplots of all variables against 'charges',
 some of the interesting relationships are:
 Positive: slos,edu,scoma, hday,wblc, hrt,temp, bili, crea, bun
 Negative: age, num.co,  pafi
-```{r}
 
-```
-##############################################
-Predicting Charges for Life Support Patients: A Critical Aspect of Healthcare Management
-```{r}
+#####Predicting Charges for Life Support Patients: A Critical Aspect of Healthcare Management
 
-```
 Accurate prediction of charges for life support patients is crucial for:
-```{r}
 
-```
 Financial Management: Aids healthcare providers and patients in budgeting and resource allocation.
 Insurance Processing: Informs patients about potential expenses for insurance and out-of-pocket costs.
 Cost-Effectiveness: Supports decision-making regarding the viability and sustainability of life support treatments.
 Policy and Research: Guides healthcare policy decisions and economic studies, impacting overall healthcare quality and accessibility.
 Effective charge prediction is vital for balancing economic considerations with ethical and patient-centered care in life support scenarios.
 ##############################################
-```{r}
 
-```
 WHICH ARE THE MOST IMPORTANT VARIABLES ON WHICH 'log_charges' DEPEND UPON?
 DEVELOP MULTIPLE LINEAR MODELS TO  RELATIONSHIP BETWEEN CHARGES AND OTHER VARIABLES
-```{r}
 
-```
 1. Fitting the starting model using all the variables except 'charges'
-```{r}
 
-```
+```{r}
+# Select only numeric columns from the data frame
 numeric_columns <- sapply(final_df, is.numeric)
-```{r}
-full_df <- subset(final_df, select = -charges) 
-```
 
-```{r}
+# Create a new data frame without the 'charges' column
+full_df <- subset(final_df, select = -charges) 
+
+# Fit a linear model to predict log-transformed charges using all other variables
 lm.charges1 <- lm(log_charges~ ., data = full_df)
+
+# Display the summary of the model fit
 summary(lm.charges1)
 ```
 
-Linear Model Summary: lm.charges3 on full_df
+Linear Model Summary: lm.charges1
 ----------------------------------------------------
 Adjusted R-squared: 0.676 - Model explains ~67.6% of variability
 F-statistic highly significant - Strong overall model predictive power
-```{r}
-
-```
 All variables significant except 'crea'
-```{r}
-
-```
 Issues to Address:
-- Remove less significant predictor: crea
-```{r}
-
-```
+- Remove less significant predictors
 ----------------------------------------------------
-We test to see which variables can be dropped:
-```{r}
-drop1(lm.charges1, test = "F")
-```
-
+We test to see which variables can be dropped, and
 Update the model by excluding identified variables
 ```{r}
+# Dropping the least significant variable from the model and testing the difference
+drop1(lm.charges1, test = "F")
+
+# Updating the model by removing the 'crea' variable and summarizing the new model
 lm.charges2 <- update(lm.charges1, . ~ . - crea)
 summary(lm.charges2)
 ```
@@ -345,66 +285,65 @@ Refined Model Summary: lm.charges2
 - Adjusted R-squared: 0.676; Residual SE: 0.724
 ----------------------------------------------------
 We test to see which variables can be dropped:
-```{r}
-drop1(lm.charges2, test = "F")
-```
 
-Simplyfying model  based on higher p-values and AIC impact,
-keeping variables of interest in the model
-```{r}
+```{r model-simplification}
+# Dropping variables with higher p-values and inspecting the AIC impact
+drop1(lm.charges2, test = "F")
+
+# Simplifying the model based on the drop1 analysis and keeping variables of interest
+# Removing the variables adlsc, alb, pafi, and scoma from the model
 lm.charges3 <- update(lm.charges2, . ~ . -adlsc -alb - pafi -scoma )
+
+# Displaying the summary of the updated model
 summary(lm.charges3)
 ```
+
 - Adjusted R-squared: 0.675; Residual SE: 0.725, Same fit but simpler
-```{r}
 
-```
-We test to see which variables can be dropped:
-```{r}
-drop1(lm.charges3, test = "F")
-```
-
-```{r}
-
-```
-Continue, Simplifying the model by removing variables with
+We test to see which variables can be dropped. Continue, Simplifying the model by removing variables with
 Higher p-values and high AIC impact, keeping variables of interest in the model
 ```{r}
-lm.charges4 <- update(lm.charges3, . ~ . 
-                      - ph -dementia -num.co -meanbp )
+# Drop insignificant variables from the linear model and test using an F-test
+drop1(lm.charges3, test = "F")
+
+# Update the linear model by removing the variables 'ph', 'dementia', 'num.co', 'meanbp'
+# and then summarize the updated model
+lm.charges4 <- update(lm.charges3, . ~ . - ph - dementia - num.co - meanbp )
 summary(lm.charges4)
 ```
-- Adjusted R-squared: 0.671; Residual SE: 0.729, Same fit much simpler
-We test to see which variables can be dropped:
-```{r}
-drop1(lm.charges4, test = "F")
-```
+
+- Adjusted R-squared: 0.671; Residual SE: 0.73, Same fit much simpler
+We test to see which variables can be dropped. 
 
 Continue, Simplifying the model by removing variables with
 Higher p-values and high AIC impact, keeping variables of interest in the model
+
 ```{r}
+# Dropping variables one by one from the model lm.charges4 and testing with F-test
+drop1(lm.charges4, test = "F")
+
+# Updating the model lm.charges4 by removing the variables 'temp' and 'income'
+# and then summarizing the new model lm.charges5
 lm.charges5 <- update(lm.charges4, . ~ . - temp -income)
 summary(lm.charges5)
 ```
-- Adjusted R-squared: 0.666; Residual SE: 0.735, Still similar fit much more simpler
+
+- Adjusted R-squared: 0.666; Residual SE: 0.735, Still similar fit much more simpler. 
+
+Now, keep Updating the model by dropping variables with Highest AIC impact as p-values are the same for all variables
+
 ```{r}
+# Testing the model by dropping one variable at a time
 drop1(lm.charges5, test = "F")
-```
 
-```{r}
-
-```
-Now, keep Updating the model by dropping variables with Highest AIC impact
-as p-values are the same for all variables
-```{r}
+# Updating the model by removing the 'slos' variable
 lm.charges5 <- update(lm.charges4, . ~ . - slos )
-```
 
-Summary of the updated model
-```{r}
+# Summary of the updated model
 summary(lm.charges5)
 ```
 - Adjusted R-squared: 0.49; Residual SE: 0.9, Worse fit much more simpler
+
 ```{r}
 
 drop1(lm.charges5, test = "F")
@@ -419,9 +358,7 @@ lm.charges6 <- update(lm.charges5, . ~ . - income )
 summary(lm.charges6)
 ```
 - Adjusted R-squared: 0.494; Residual SE: 0.9, better fit much more simpler
-```{r}
 
-```
 Conducting drop1 analysis
 ```{r}
 drop1(lm.charges6, test = "F")
@@ -437,9 +374,7 @@ Summary of the updated model
 summary(lm.charges7)
 ```
 - Adjusted R-squared: 0.491; Residual SE: 0.9, similar fit much more simpler
-```{r}
 
-```
 Conducting drop1 analysis
 ```{r}
 drop1(lm.charges7, test = "F")
@@ -455,22 +390,16 @@ Summary of the updated model
 summary(lm.charges8)
 ```
 - Adjusted R-squared: 0.42; Residual SE: 0.96, worse fit much more simpler
-```{r}
 
-```
 Conducting drop1 analysis
 ```{r}
 drop1(lm.charges8, test = "F")
 ```
 
 Finally the model cannot be further simplified without loss of predictive power.
-```{r}
 
-```
 ##########CROSS VALIDATION AND BEST MODEL SELECTION##########
-```{r}
 
-```
 ############CROSS VALIDATION##################
 ```{r}
 library(caret)
@@ -544,25 +473,20 @@ datatable(results_df, caption = 'Linear Model development Cross-validation Resul
 ```
 
 ####### Cross-validation Results Brief ########
-```{r}
 
-```
+
 lm.charges1 and lm.charges2: Best accuracy (RMSE ~0.726, R-squared ~0.676).
 lm.charges3: Slightly lower performance.
 lm.charges4: Decent trade-off (RMSE: 0.731, R-squared: 0.671).
 lm.charges5: Lower accuracy (RMSE: 0.904, R-squared: 0.497), possible overfitting.
 Conclusion: lm.charges4 stands out for balancing simplicity and effectiveness.
-```{r}
 
-```
 #######INTERACTION-TERMS EFFECT ON model 'lm.charges4'####
 Are there any interesting interactions effects on charges due to
 any variables?
 1. Does the impact of age on healthcare charges vary significantly
 across different disease groups in the dataset?
-```{r}
 
-```
 Adding an interaction term between age and disease group to the model
 ```{r}
 lm_age_dzgroup <- lm(log_charges ~ age * dzgroup 
@@ -581,9 +505,7 @@ Summary of Interaction Effects between Age and Disease Groups
 - Coma: Significant decrease in charges with age.
 - MOSF w/Malignancy: Significant decrease in charges with age.
 - Cirrhosis, Colon Cancer, COPD, Lung Cancer: No significant interaction.
-```{r}
 
-```
 2. Is the effect of hospital death on healthcare charges modified
 by the type of disease a patient has?
 Adding an interaction term between hospital stay length (hospdead) and disease group
@@ -599,13 +521,7 @@ Checking the summary of the model to see the interaction effect
 summary(lm_hospdead_dzgroup)
 ```
 
-```{r}
 
-```
-
-```{r}
-
-```
 ######CROSS VALIDATE AND COMPARE RESULTS#######
 ```{r}
 
@@ -641,13 +557,9 @@ datatable(results_df2, caption = 'Selected Interaction Cross-validation Results'
 Built a Non-Linear model upon lm.charges4, lm_age_dzgroup and lm_hospdead_dzgroup,
 with RMSEs over 0.890 and R-squared around 0.500, are less precise but offer
 insights into specific age and disease group dynamics.
-```{r}
 
-```
 ######Visual Exploration of Non-Linear Trends#########
-```{r}
 
-```
 Loop through each numeric variable to visually explore potential non-linear relationships
 ```{r}
 library(ggplot2)
@@ -669,26 +581,18 @@ Creating a scatterplot with a smoother to detect non-linear trends
   
 Each plot shows the relationship between 'log_charges' and a numeric variable
 The smoother (red line with orange confidence area) helps identify potential non-linear patterns
-```{r}
-}
-```
+
 EDA Summary: Non-Linear Effects
 From the graph we can see that there are some non-linear effects in the following variables:
 Probable Quadratic Effects: meanbp, bun, ph,slos
 Polynomial Effects: temp, wblc, edu, hrt, hday, bili, num.co, alb
 No significant non-linear trend in age.
-```{r}
 
-```
 
 #####Iterating on the lm.charges4, with non linear effects####
-```{r}
 
-```
 Building a model incorporating observed non-linear effects
-```{r}
 
-```
 Update the lm.charges4 model with non-linear terms
 ```{r}
 nonlinear.lm.charges4 <- update(lm.charges4, . ~ . -slos - meanbp - bun - ph - alb 
@@ -705,9 +609,7 @@ nonlinear.lm.charges4 <- update(lm.charges4, . ~ . -slos - meanbp - bun - ph - a
                                   poly(num.co, 3))
 ```
 
-```{r}
 
-```
 Summary of the updated model
 ```{r}
 summary(nonlinear.lm.charges4)
@@ -717,9 +619,7 @@ num.co - Higher order terms are insignificant, change to linear
 bili - poly3 is insignificant, change to poly2
 edu - higher order terms are insignificant, change to linear
 meanbp - quadratic term is insignificant, change to linear
-```{r}
 
-```
 
 Simplify model, remove alb
 ```{r}
@@ -771,29 +671,18 @@ datatable(selected_results_df, caption = 'Selected Non-Linear Cross-validation R
 ```
 
 ####### Cross-validation Results Brief ########
-```{r}
 
-```
 Nonlinear adaptations of lm.charges4 led to two distinct models: Nonlinear lm.charges4 and Trimmed Nonlinear Model.
 Nonlinear lm.charges4, with an RMSE of 0.649 and R-squared of 0.741, shows marked improvement over the linear lm.charges4 (RMSE: 0.731, R-squared: 0.671).
 The Trimmed Nonlinear Model, further refined with fewer variables, achieves a similar performance (RMSE: 0.647, R-squared: 0.742), suggesting effective optimization without loss of predictive ability.
-```{r}
 
-```
 Conclusion: The transition to nonlinear modeling significantly enhances the accuracy of the original lm.charges4, with the trimmed version balancing model complexity and predictive precision.
-```{r}
 
-```
  
-```{r}
-
-```
 ##########GENERALIZED ADDITIVE MODEL########
 We use variables from our most performant model:"lm.nonlinear.trim",
 to try to build a model that captures non-linear dynamics completely.
-```{r}
 
-```
 Load GAM library
 ```{r}
 library(mgcv)
@@ -898,50 +787,34 @@ datatable(selected_results_df, caption = 'Selected GAM model Cross-validation Re
 ```
 
 ####### Cross-validation Results Brief ########
-```{r}
 
-```
 Cross-validation Results Summary:
-```{r}
 
-```
 lm.charges4:
 - RMSE: 0.731, R-squared: 0.671, MAE: 0.57
 - Provides a basic level of predictive accuracy, serving as a baseline.
-```{r}
 
-```
 Nonlinear lm.charges4:
 - RMSE: 0.649, R-squared: 0.741, MAE: 0.502
 - Shows improved accuracy over the basic model, indicating the benefit of introducing nonlinearity.
-```{r}
 
-```
 Trimmed Nonlinear Model:
 - RMSE: 0.647, R-squared: 0.742, MAE: 0.503
 - Offers a slight improvement in accuracy with a simpler, more interpretable model compared to the Nonlinear lm.charges4.
-```{r}
 
-```
 GAM Model:
 - RMSE: 0.659, R-squared: 0.732
 - Despite its flexibility in capturing complex patterns, it slightly underperforms compared to the Nonlinear models, with potential overfitting due to complexity.
-```{r}
 
-```
 Conclusion:
 - The Trimmed Nonlinear Model emerges as the best choice, offering high accuracy with a simpler, more interpretable model structure.
 - The GAM Model, while powerful, may require careful handling to avoid overfitting and ensure reliable predictions on new data.
-```{r}
 
-```
 
 ########GLM : LOGISTIC REGRESSION############
 What are the key predictors that significantly influence the likelihood of
 a patient's death in the hospital?
-```{r}
 
-```
 Including log_charges in the dataset for visualizing hospdead
 Make data ready for plotting
 ```{r}
@@ -984,9 +857,7 @@ Create the scatterplot with the sampled data
 }
 ```
 
-```{r}
 
-```
 OBSERVATION: The visual inspection of scatterplots comparing each numeric
 variable with the hospdead status reveals a few potential separation patterns in variables like:
 log_charges, num.co, age, adlsc and alb.
@@ -1085,9 +956,7 @@ summary(logistic_10)
 ```
 
 Dementia is mildly significant, so keep it in the model
-```{r}
 
-```
 Applying backward stepwise regression to the expanded model to simplify
 it by removing statistically insignificant variables.
 This helps in achieving a simpler model that still captures essential predictors for hospital death.
@@ -1096,9 +965,7 @@ logistic.simple<- step(logistic_10, direction = "backward")
 summary(logistic.simple)
 ```
 Backward stepwise regression doesnt remove any variables, so keep the model as it is
-```{r}
 
-```
 ############CROSS VALIDATION##################
 #######
 ```{r}
@@ -1174,50 +1041,33 @@ Display the summary table
 datatable(results_df, caption = 'Logistic Regression models Cross-validation Results', options = list(pageLength = 10))
 ```
 
-```{r}
-
-```
 Integrated Model Development and Performance Summary:
-```{r}
 
-```
 Initial Steps:
 - logistic_1 (baseline with 'age'): Accuracy at 0.743; a starting point with room for improvement.
 - logistic_2 (addition of 'hday'): Slight increase in Accuracy to 0.744 and Kappa to 0.069, indicating marginal improvement.
-```{r}
 
-```
 Incorporating Health Status:
 - logistic_3 (addition of 'scoma'): Significant leap in Accuracy to 0.781 and Kappa to 0.295, showing the importance of health status indicators.
 - logistic_4 (introduction of 'adlsc'): Maintains Accuracy at 0.782 and Kappa at 0.301, consolidating gains.
-```{r}
 
-```
 Clinical and Demographic Expansion:
 - logistic_6-8: Further fine-tuning with clinical and demographic variables. Accuracy stabilizes around 0.775, and Kappa sees modest gains, highlighting the complex nature of these factors.
-```{r}
 
-```
 Refined and Optimal Models:
 - logistic_9 (inclusion of 'dzgroup'): Peaks in Accuracy (0.783) and Kappa (0.35), underscoring the impact of disease grouping.
 - logistic_10 (testing 'edu' and 'dementia'): Sustains peak Accuracy and Kappa (0.351), confirming the optimized combination of variables.
-```{r}
 
-```
 Final Takeaways:
 - The evolution from logistic_1 to logistic_10 illustrates a careful balance of adding predictive variables while monitoring overfitting (as shown by stable AccuracySD).
 - The best models, logistic_9 and logistic_10, demonstrate the effectiveness of a comprehensive approach, blending demographic, clinical, and disease-specific predictors.
 - This step-wise development process resulted in models that not only predict accurately but also provide meaningful insights into the factors affecting patient outcomes
-```{r}
 
-```
 
 #Selecting logistic_10 as our best model based on cross-validation results
 We want to deep dive understand the performance of the model using a confusion matrix
 and ROC curve.
-```{r}
 
-```
 Calculate the Confusion Matrix
 Load the required libraries
 ```{r}
@@ -1237,52 +1087,36 @@ print(conf_matrix0.5)
 ```
 
 Confusion Matrix (0.5) Interpretation:
-```{r}
 
-```
 Model Performance:
 - Accuracy: 0.792. Model correctly predicts survival and non-survival in 79.2% of cases.
 - Kappa: 0.3813. Moderate agreement beyond chance between prediction and actual outcomes.
-```{r}
 
-```
 Class-wise Performance:
 - Sensitivity: 92.34%. High ability to correctly identify non-survivors (True Negative Rate).
 - Specificity: 41.22%. Lower ability to correctly identify survivors (True Positive Rate).
 - Positive Predictive Value: 81.95%. If model predicts non-survival, 81.95% chance it's correct.
 - Negative Predictive Value: 65.06%. If model predicts survival, 65.06% chance it's correct.
-```{r}
 
-```
 Statistical Tests:
 - P-Value [Acc > NIR]: < 2.2e-16. Model significantly better than No Information Rate.
 - Mcnemar's Test: < 2.2e-16. Significant difference between type I and type II errors.
-```{r}
 
-```
 Overall Inferences:
 - Model is more effective at identifying non-survivors than survivors.
 - Imbalance in sensitivity and specificity suggests potential bias towards predicting non-survival.
 - High prevalence (74.29%) might influence the predictive values.
 - Balanced Accuracy (66.78%) indicates room for improvement in managing class imbalance.
-```{r}
 
-```
 Conclusion:
 - While the model is quite accurate, there's a need for improved balance in sensitivity and specificity.
 - Consideration for class imbalance and further feature refinement could enhance model performance.
-```{r}
 
-```
 ROC Curve and AUC
-Load the necessary library
-Load the necessary library
-```{r}
-library(pROC)
-```
 
 Calculate the ROC curve
 ```{r}
+library(pROC)
 roc_response <- roc(response = final_df$hospdead, predictor = as.numeric(predictions), percent = TRUE)
 ```
 
@@ -1314,66 +1148,43 @@ plot(roc_response,
 ```
 
 ROC Curve and AUC Interpretation for Hospdead Variable:
-```{r}
 
-```
 - The AUC of 82.075% suggests the model is effective in distinguishing between patients who died in the hospital (hospdead = 1) and those who did not (hospdead = 0).
 - The True Positive Rate (TPR) or sensitivity indicates the model's accuracy in identifying actual in-hospital deaths.
 - The False Positive Rate (FPR) or 1 - specificity represents how often the model incorrectly predicts death among those who survived.
-```{r}
 
-```
 Impact of Class Distribution:
 - The higher number of survivors (hospdead = 0) may influence the model's predictive performance, particularly its specificity.
 - Careful threshold selection is crucial to balance TPR and FPR given the class imbalance.
-```{r}
 
-```
 Threshold Strategy for Clinical Utility:
 - In clinical settings where the cost of missing an actual death (False Negative) is high, a lower threshold may be warranted to ensure high sensitivity.
 - Conversely, to avoid overburdening the healthcare system with false alarms, a threshold that ensures an acceptable level of specificity without sacrificing too much sensitivity might be preferred.
-```{r}
 
-```
 Conclusion:
 - The model's strong AUC performance, considering the distribution of the `hospdead` variable, indicates its potential as a supportive tool for prognostic assessment in a hospital setting.
 - The plotted thresholds on the ROC curve provide insights into how different cut-off points will affect the model's prediction of in-hospital mortality.
-```{r}
-
-```
 
 ######Final Analysis and Interpretation of Model's Performance at Threshold 0.5:
-```{r}
 
-```
 Model's Overall Accuracy:
 - At 79.2%, the model performs well, with a moderate Kappa (0.3813) suggesting useful predictive power.
-```{r}
 
-```
 True/False Positive/Negative Rates:
 - High Sensitivity (92.34%): Model effectively identifies true non-deaths.
 - Low Specificity (41.22%): Model less effective at identifying true deaths.
 - PPV (81.95%): High likelihood that a predicted non-death is correct.
 - NPV (65.06%): Moderate likelihood that a predicted death is correct.
-```{r}
 
-```
 Statistical Significance:
 - The model is significantly better than guessing, supported by P-Value [Acc > NIR].
-```{r}
 
-```
 Model Bias and Class Imbalance:
 - The model shows a potential bias towards predicting non-deaths.
 - The prevalence of non-deaths may be skewing predictive values.
-```{r}
 
-```
 Conclusions and Takeaways:
 - The model's high sensitivity is beneficial for scenarios where missing a non-death is critical.
 - To improve specificity, consider re-balancing the dataset or revising the feature selection.
 - Given the moderate Kappa and the significant Mcnemar's Test, further model tuning is advised to better balance sensitivity and specificity.
-```{r}
 
-```
