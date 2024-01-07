@@ -339,7 +339,7 @@ summary(lm.charges5)
 ```
 - Adjusted R-squared: 0.49; Residual SE: 0.9, Worse fit much more simpler
 
-```{r model-updating}
+```{r}
 # Performing a drop1 test on the model lm.charges5 to check which variable can be dropped
 drop1(lm.charges5, test = "F")
 
@@ -364,7 +364,7 @@ summary(lm.charges7)
 ```
 
 - Adjusted R-squared: 0.491; Residual SE: 0.9, similar fit much more simpler
-```{r model-updating}
+```{r}
 # Conducting drop1 analysis to see the effect of dropping each variable on model fit
 drop1(lm.charges7, test = "F")
 
@@ -386,7 +386,7 @@ Finally the model cannot be further simplified without loss of predictive power.
 
 Cross validating all the linear models to select the best model
 
-```{r cross-validation-process}
+```{r}
 # Load the required package
 library(caret)
 
@@ -547,19 +547,38 @@ Probable Quadratic Effects: meanbp, bun, ph,slos
 Polynomial Effects: temp, wblc, edu, hrt, hday, bili, num.co, alb
 No significant non-linear trend in age.
 
-### Iterating on the lm.charges4, with non linear effects
+### Iterating on the lm.charges4, adding non linear effects
 
 Building a model incorporating observed non-linear effects
-
-
 
 num.co - Higher order terms are insignificant, change to linear
 bili - poly3 is insignificant, change to poly2
 edu - higher order terms are insignificant, change to linear
 meanbp - quadratic term is insignificant, change to linear
 
+# Building a model incorporating observed non-linear effects
+```{r}
+# Update the lm.charges4 model with non-linear terms
+nonlinear.lm.charges4 <- update(lm.charges4, . ~ . -slos - meanbp - bun - ph - alb 
+                                - temp - edu - hday - bili - num.co +
+                                  poly(slos, 2) +
+                                  poly(meanbp, 2) + 
+                                  poly(bun, 2) +
+                                  poly(ph, 2) +
+                                  poly(alb, 2) +
+                                  poly(temp, 3) + 
+                                  poly(edu, 3) +
+                                  poly(hday, 3) +
+                                  poly(bili, 3) +
+                                  poly(num.co, 3))
 
-Simplify model, remove alb
+
+# Summary of the updated model
+summary(nonlinear.lm.charges4)
+
+
+```
+#### Simplify model, remove alb
 ```{r}
 lm.nonlinear.trim <- update(lm.charges4, . ~ . -slos - bun - ph - alb 
                             - temp - hday - bili +
@@ -574,19 +593,16 @@ lm.nonlinear.trim <- update(lm.charges4, . ~ . -slos - bun - ph - alb
 summary(lm.nonlinear.trim)
 ```
 
-CROSS VALIDATE AND COMPARE RESULTS
+### CROSS VALIDATE AND COMPARE RESULTS OF THE NON-LINEAR MODELS
 Perform cross-validation for nonlinear.lm.charges4
-```{r}
+```{r, echo=FALSE}
+# Perform cross-validation for nonlinear.lm.charges4
 results_nonlinear_charges4 <- cross_validate_model(nonlinear.lm.charges4, full_df)
-```
 
-Perform cross-validation for the final trimmed model
-```{r}
+# Perform cross-validation for the final trimmed model
 results_trimmed <- cross_validate_model(lm.nonlinear.trim, full_df)
-```
 
-Combine the selected results into one data frame
-```{r}
+# Combine the selected results into one data frame
 selected_results_df <- data.frame(
   Model = c(
     "lm.charges4", "Nonlinear lm.charges4", "Trimmed Nonlinear Model"
@@ -601,33 +617,28 @@ selected_results_df <- data.frame(
     results4$MAE, results_nonlinear_charges4$MAE, results_trimmed$MAE
   ), 3)
 )
-```
 
-Display the selected results table
-```{r}
+# Display the selected results table
 datatable(selected_results_df, caption = 'Selected Non-Linear Cross-validation Results Comparison', options = list(pageLength = 10))
 ```
-
-####### Cross-validation Results Brief ########
+### Cross-validation Results Brief ###
 
 Nonlinear adaptations of lm.charges4 led to two distinct models: Nonlinear lm.charges4 and Trimmed Nonlinear Model.
 Nonlinear lm.charges4, with an RMSE of 0.649 and R-squared of 0.741, shows marked improvement over the linear lm.charges4 (RMSE: 0.731, R-squared: 0.671).
-The Trimmed Nonlinear Model, further refined with fewer variables, achieves a similar performance (RMSE: 0.647, R-squared: 0.742), suggesting effective optimization without loss of predictive ability.
+The Trimmed Nonlinear Model, further refined with fewer variables, achieves a similar performance (RMSE: 0.66, R-squared: 0.742), suggesting effective optimization without loss of predictive ability.
 
 Conclusion: The transition to nonlinear modeling significantly enhances the accuracy of the original lm.charges4, with the trimmed version balancing model complexity and predictive precision.
 
  
-##########GENERALIZED ADDITIVE MODEL########
+## GENERALIZED ADDITIVE MODEL
 We use variables from our most performant model:"lm.nonlinear.trim",
 to try to build a model that captures non-linear dynamics completely.
 
-Load GAM library
-```{r}
+```{r, echo=FALSE}
+# Load GAM library
 library(mgcv)
-```
 
-Using the variables from lm.nonlinear.trim to a build base GAM
-```{r}
+# Using the variables from lm.nonlinear.trim to build a base GAM
 gam.model1 <- gam(log_charges ~ s(slos) + 
                                 s(bun) +
                                 s(ph) +
@@ -636,73 +647,55 @@ gam.model1 <- gam(log_charges ~ s(slos) +
                                 s(hday) +
                                 s(bili),
                               data = full_df)
-```
 
-Summary of the GAM model
-```{r}
+# Summary of the GAM model
 summary(gam.model1)
 ```
 
-############################
+### Cross-validate the GAM model ############################
+
+
 ```{r}
+# Load the 'mgcv' library
 library(mgcv)
-```
 
-Prepare Data for K-Fold Cross-validation
-```{r}
-
+# Prepare Data for K-Fold Cross-validation
 set.seed(123)  # for reproducibility
 k <- 10  # number of folds
 n <- nrow(full_df)
 fold_ids <- sample(rep(1:k, length.out = n))
-```
 
-Define a function to perform k-fold cross-validation
-```{r}
+# Define a function to perform k-fold cross-validation
 perform_cv_for_gam <- function(model, data, k) {
-```
-Initialize vectors to store performance metrics
-```{r}
+  # Initialize vectors to store performance metrics
   rmse_values <- numeric(k)
   r_squared_values <- numeric(k)
-```
-  
-Generate fold IDs for cross-validation
-```{r}
+
+  # Generate fold IDs for cross-validation
   set.seed(123)  # For reproducibility
   fold_ids <- sample(rep(1:k, length.out = nrow(data)))
-```
-  
-Perform k-fold cross-validation
-```{r}
+
+  # Perform k-fold cross-validation
   for (i in 1:k) {
     train_data <- data[fold_ids != i, ]
     test_data <- data[fold_ids == i, ]
-```
-    
-Make predictions and calculate RMSE and R-squared
-```{r}
+
+    # Make predictions and calculate RMSE and R-squared
     predictions <- predict(model, test_data, type = "response")
     rmse_values[i] <- sqrt(mean((predictions - test_data$log_charges)^2))
     r_squared_values[i] <- cor(predictions, test_data$log_charges)^2
   }
-```
-  
-Calculate and return the average RMSE and R-squared
-```{r}
+
+  # Calculate and return the average RMSE and R-squared
   list(mean_rmse = mean(rmse_values), mean_r_squared = mean(r_squared_values))
 }
-```
 
-Results of 10-fold cross-validation
-```{r}
+# Results of 10-fold cross-validation
 cv_results <- perform_cv_for_gam(gam.model1, full_df, 10)
 gam_mean_rmse <- cv_results$mean_rmse
 gam_mean_r_squared <- cv_results$mean_r_squared
-```
 
-Combine the Selected Results into One Data Frame
-```{r}
+# Combine the Selected Results into One Data Frame
 selected_results_df <- data.frame(
   Model = c(
     "lm.charges4", "Nonlinear lm.charges4", "Trimmed Nonlinear Model", "GAM Model"
@@ -714,13 +707,11 @@ selected_results_df <- data.frame(
     results4$Rsquared, results_nonlinear_charges4$Rsquared, results_trimmed$Rsquared, gam_mean_r_squared
   ), 3),
   MAE = c(
-    round(results4$MAE, 3), round(results_nonlinear_charges4$MAE, 3), round(results_trimmed$MAE, 3), NA  # Assuming MAE is not calculated for the GAM model
+    round(results4$MAE, 3), round(results_nonlinear_charges4$MAE, 3), round(results_trimmed$MAE, 3), NA
   )
 )
-```
 
-Display the selected results table
-```{r}
+# Display the selected results table
 datatable(selected_results_df, caption = 'Selected GAM model Cross-validation Results Comparison', options = list(pageLength = 10))
 ```
 
@@ -749,43 +740,30 @@ Conclusion:
 - The GAM Model, while powerful, may require careful handling to avoid overfitting and ensure reliable predictions on new data.
 
 
-########GLM : LOGISTIC REGRESSION############
+## GLM : LOGISTIC REGRESSION############
 What are the key predictors that significantly influence the likelihood of
 a patient's death in the hospital?
 
-Including log_charges in the dataset for visualizing hospdead
-Make data ready for plotting
-```{r}
+```{r, echo=FALSE}
+# Make data ready for plotting
 numeric_vars <- names(final_df)[sapply(final_df, is.numeric)]
 numeric_vars
-```
 
-Exclude 'log_charges' from Numeric Columns
-```{r}
-
+# Exclude 'log_charges' from Numeric Columns
 numeric_vars <- numeric_vars[!(numeric_vars %in% c("charges"))]
 numeric_vars
-```
 
-```{r}
+# Load the ggplot2 library
 library(ggplot2)
-```
 
-Set the sample size for better visibility of the scatterplots
-```{r}
+# Set the sample size for better visibility of the scatterplots
 sample_size <- 500  # Adjust this number based on your data size and needs
-```
 
-```{r}
 for (var in numeric_vars) {
-```
-Take a random sample of the data
-```{r}
+  # Take a random sample of the data
   sampled_data <- final_df[sample(nrow(final_df), sample_size), ]
-```
   
-Create the scatterplot with the sampled data
-```{r}
+  # Create the scatterplot with the sampled data
   print(ggplot(sampled_data, aes_string(x = var, y = 'hospdead')) +
           geom_jitter(aes(color = as.factor(hospdead)), width = 0.1, height = 0.1) +
           scale_color_manual(values = c('0' = 'red', '1' = 'blue')) +
@@ -793,15 +771,15 @@ Create the scatterplot with the sampled data
                x = var, y = "Hospdead Status") +
           theme_minimal())
 }
-```
 
+```
 
 OBSERVATION: The visual inspection of scatterplots comparing each numeric
 variable with the hospdead status reveals a few potential separation patterns in variables like:
 log_charges, num.co, age, adlsc and alb.
-```{r}
 
-```
+### Building a Logistic Regression Model
+
 Building an initial logistic regression model using all variables
 to evaluate their initial significance.
 ```{r}
@@ -811,137 +789,105 @@ summary(logistic_full)
 
 The initial full model yields many significant terms, indicating variables of interest.
 like log_charges, age, adlsc, scoma, bun, bili, slos, dzgroup, income
-```{r}
 
-```
 Therefore, we start building the model from scratch, beginning with the most promising predictor: age.
-```{r}
+
+```{r combined-modeling, echo=FALSE}
+# Logistic Regression Model Building and Selection
+
+## Model 1: Initial Model
 logistic_1 <- glm(hospdead ~ age , family = "binomial", data = final_df)
 summary(logistic_1)
-```
 
-Adding 'hday' to the model, as time spent under critical care could be a strong indicator of patient health status.
-```{r}
-
+## Model 2: Adding 'hday'
+# Adding 'hday' to the model, as time spent under critical care could be a strong indicator of patient health status.
 logistic_2 <- update(logistic_1, . ~ . + hday)
 summary(logistic_2)
-```
 
-Incorporating 'scoma' (Activities of Daily Living Score) as it can be a strong indicator of patient health status.
-```{r}
+## Model 3: Incorporating 'scoma'
+#Incorporating 'scoma' (Activities of Daily Living Score) as it can be a strong indicator of patient health status.
 logistic_3 <- update(logistic_2, . ~ . + scoma)
 summary(logistic_3)
-```
 
-Adding 'adlsc' () to explore if Daily living activity score correlate with mortality.
-```{r}
+## Model 4: Adding 'adlsc'
+#Adding 'adlsc' to explore if Daily living activity score correlates with mortality.
 logistic_4 <- update(logistic_3, . ~ . + adlsc)
 summary(logistic_4)
-```
 
-Including 'num.co' to assess the impact of number of comorbidities patient outcomes.
-```{r}
+## Model 5: Including 'num.co'
+#Including 'num.co' to assess the impact of the number of comorbidities on patient outcomes.
 logistic_5 <- update(logistic_4, . ~ . + num.co)
 summary(logistic_5)
-```
 
-Check if log_charges is significant now
-```{r}
+## Model 6: Checking if 'log_charges' is significant
+#Check if 'log_charges' is significant now
 logistic_6 <- update(logistic_5, . ~ . + log_charges)
 summary(logistic_6)
-```
 
-Log_charges is highly insignificant, but num.co is insignificant,
-due to redundancy, so remove num.co from the model
-```{r}
+## Model 7: Removing 'num.co' due to redundancy
+#Log_charges is highly insignificant, but num.co is insignificant,
+#due to redundancy, so remove num.co from the model
 logistic_6 <- update(logistic_6, . ~ . - num.co)
 summary(logistic_6)
-```
 
-Expanding the model with clinical variables like 'alb' (Albumin levels), 'bili' (Bilirubin levels),
-'crea' (Creatinine levels), 'pafi' (Partial Pressure of Arterial Oxygen), ph is insignificant, so remove it from the model
-These clinical measures are often critical in understanding patient health and predicting outcomes.
-```{r}
-logistic_7 <- update(logistic_6, . ~ . + alb + bili + crea + 
-                       bun + pafi + meanbp)
+## Model 8: Expanding with clinical variables
+#Expanding the model with clinical variables like 'alb', 'bili', 'crea', 'pafi', etc.
+logistic_7 <- update(logistic_6, . ~ . + alb + bili + crea + bun + pafi + meanbp)
 summary(logistic_7)
-```
 
-Expanding the model with categorical variable income
-```{r}
+## Model 9: Expanding with 'income'
+#Expanding the model with categorical variable 'income'
 logistic_8 <- update(logistic_7, . ~ . + income)
 summary(logistic_8)
-```
 
-Income turns out to be very mildly significant, so we remove it from the model and
-add 'dzgroup' (Disease Group) to assess the impact of disease type on patient outcomes.
-```{r}
+## Model 10: Removing 'income' and adding 'dzgroup'
+#Income turns out to be very mildly significant, so we remove it from the model and
+#add 'dzgroup' (Disease Group) to assess the impact of disease type on patient outcomes.
 logistic_9 <- update(logistic_8, . ~ . - income + dzgroup)
 summary(logistic_9)
-```
 
-As expected dzgroup is significant
-Check if edu is significant now
-```{r}
+## Model 11: Checking if 'edu' is significant
+#Check if 'edu' is significant now
 logistic_10 <- update(logistic_9, . ~ . + edu)
 summary(logistic_10)
-```
 
-edu is insignificant, so remove it from the model and check dementia
-```{r}
+## Model 12: Removing 'edu' and adding 'dementia'
+#'Edu' is insignificant, so remove it from the model and check 'dementia'
 logistic_10 <- update(logistic_10, . ~ . - edu + dementia)
 summary(logistic_10)
-```
 
-Dementia is mildly significant, so keep it in the model
-
-Applying backward stepwise regression to the expanded model to simplify
-it by removing statistically insignificant variables.
-This helps in achieving a simpler model that still captures essential predictors for hospital death.
-```{r}
-logistic.simple<- step(logistic_10, direction = "backward")
+## Model 13: Applying backward stepwise regression
+#Applying backward stepwise regression to the expanded model to simplify it by removing statistically insignificant variables.
+#This helps in achieving a simpler model that still captures essential predictors for hospital death.
+logistic.simple <- step(logistic_10, direction = "backward")
 summary(logistic.simple)
 ```
-Backward stepwise regression doesnt remove any variables, so keep the model as it is
 
-############CROSS VALIDATION##################
-#######
+###CROSS VALIDATION LOGISTIC MODELS AND COMPARE RESULTS
+Perform cross-validation for each of the logistic regression models
 ```{r}
 library(caret)
-```
 
-Setting a seed for reproducibility
-```{r}
+# Setting a seed for reproducibility
 set.seed(123)
-```
 
-Create a function for cross-validation
-```{r}
+# Create a function for cross-validation
 cross_validate_model <- function(model, full_df, number_folds = 10) {
-```
-Extract the formula from the model
-```{r}
+
+  # Extract the formula from the model
   model_formula <- formula(model)
-```
-  
-Set up cross-validation control
-```{r}
+
+  # Set up cross-validation control
   train_control <- trainControl(method = "cv", number = number_folds)
-```
-  
-Train the model using cross-validation
-```{r}
+
+  # Train the model using cross-validation
   cv_model <- train(model_formula, data = full_df, method = "glm", trControl = train_control)
-```
-  
-Return the results
-```{r}
+
+  # Return the results
   return(cv_model$results)
 }
-```
 
-Perform cross-validation for each of the remaining models
-```{r}
+# Perform cross-validation for each of the remaining models
 results1 <- cross_validate_model(logistic_1, full_df)
 results2 <- cross_validate_model(logistic_2, full_df)
 results3 <- cross_validate_model(logistic_3, full_df)
@@ -952,16 +898,12 @@ results7 <- cross_validate_model(logistic_7, full_df)
 results8 <- cross_validate_model(logistic_8, full_df)
 results9 <- cross_validate_model(logistic_9, full_df)
 results10 <- cross_validate_model(logistic_10, full_df)
-```
 
-Print the results for each as a table
-```{r}
+# Print the results for each as a table
 library(knitr)
 library(DT)
-```
 
-Create a summary table using the correct metrics from the cross-validation results
-```{r}
+# Create a summary table using the correct metrics from the cross-validation results
 results_df <- data.frame(
   Model = c("logistic_1", "logistic_2", "logistic_3", "logistic_4",
             "logistic_5", "logistic_6", "logistic_7", "logistic_8", "logistic_9", "logistic_10"),
@@ -972,14 +914,11 @@ results_df <- data.frame(
   AccuracySD = round(c(results1$AccuracySD, results2$AccuracySD, results3$AccuracySD, 
                        results4$AccuracySD, results5$AccuracySD, results6$AccuracySD, results7$AccuracySD, results8$AccuracySD, results9$AccuracySD, results10$AccuracySD), 3)
 )
-```
 
-Display the summary table
-```{r}
+# Display the summary table
 datatable(results_df, caption = 'Logistic Regression models Cross-validation Results', options = list(pageLength = 10))
 ```
-
-Integrated Model Development and Performance Summary:
+### Logistic regression Model Development and Performance Summary:
 
 Initial Steps:
 - logistic_1 (baseline with 'age'): Accuracy at 0.743; a starting point with room for improvement.
@@ -1001,48 +940,42 @@ Final Takeaways:
 - The best models, logistic_9 and logistic_10, demonstrate the effectiveness of a comprehensive approach, blending demographic, clinical, and disease-specific predictors.
 - This step-wise development process resulted in models that not only predict accurately but also provide meaningful insights into the factors affecting patient outcomes
 
+### CONFUSION MATRIX AND ROC CURVE ANALYSIS
+Selecting logistic_10 as our best model based on cross-validation results
+We want to deep dive understand the performance of the model using a confusion matrix and ROC curve.
 
-#Selecting logistic_10 as our best model based on cross-validation results
-We want to deep dive understand the performance of the model using a confusion matrix
-and ROC curve.
-
-Calculate the Confusion Matrix
-Load the required libraries
-```{r}
+```{r, echo=FALSE}
+# Load the required libraries
 library(caret)
-```
 
-First, make predictions on the dataset
-```{r}
+# Make predictions on the dataset
 predictions <- predict(logistic_10, newdata = final_df, type = "response")
 predicted_class <- ifelse(predictions > 0.5, 1, 0)  # Assuming 0.5 as threshold
-```
 
-Generate the confusion matrix
-```{r}
+# Generate the confusion matrix
 conf_matrix0.5 <- confusionMatrix(as.factor(predicted_class), as.factor(final_df$hospdead))
 print(conf_matrix0.5)
 ```
 
-Confusion Matrix (0.5) Interpretation:
+#### Confusion Matrix (threshold = 0.5) Interpretation:
 
 Model Performance:
 - Accuracy: 0.792. Model correctly predicts survival and non-survival in 79.2% of cases.
 - Kappa: 0.3813. Moderate agreement beyond chance between prediction and actual outcomes.
 
 Class-wise Performance:
-- Sensitivity: 92.34%. High ability to correctly identify non-survivors (True Negative Rate).
-- Specificity: 41.22%. Lower ability to correctly identify survivors (True Positive Rate).
-- Positive Predictive Value: 81.95%. If model predicts non-survival, 81.95% chance it's correct.
-- Negative Predictive Value: 65.06%. If model predicts survival, 65.06% chance it's correct.
+- Sensitivity: 92.34%. High ability to correctly identify survivors (True Positive Rate).
+- Specificity: 41.22%. Lower ability to correctly identify survivors (True Negative Rate).
+- Positive Predictive Value: 81.95%. If model predicts survival, 81.95% chance it's correct.
+- Negative Predictive Value: 65.06%. If model predicts non-survival, 65.06% chance it's correct.
 
 Statistical Tests:
 - P-Value [Acc > NIR]: < 2.2e-16. Model significantly better than No Information Rate.
 - Mcnemar's Test: < 2.2e-16. Significant difference between type I and type II errors.
 
 Overall Inferences:
-- Model is more effective at identifying non-survivors than survivors.
-- Imbalance in sensitivity and specificity suggests potential bias towards predicting non-survival.
+- Model is more effective at identifying survivors than non-survivors.
+- Imbalance in sensitivity and specificity suggests potential bias towards predicting survival.
 - High prevalence (74.29%) might influence the predictive values.
 - Balanced Accuracy (66.78%) indicates room for improvement in managing class imbalance.
 
@@ -1050,20 +983,19 @@ Conclusion:
 - While the model is quite accurate, there's a need for improved balance in sensitivity and specificity.
 - Consideration for class imbalance and further feature refinement could enhance model performance.
 
-ROC Curve and AUC
+#### ROC Curve and AUC Analysis
 
-Calculate the ROC curve
-```{r}
+```{r combined-roc-plot, echo=FALSE}
+# Load the pROC library
 library(pROC)
-roc_response <- roc(response = final_df$hospdead, predictor = as.numeric(predictions), percent = TRUE)
-```
 
-Specify the thresholds you want to display on the plot
-```{r}
+# Calculate the ROC curve
+roc_response <- roc(response = final_df$hospdead, predictor = as.numeric(predictions), percent = TRUE)
+
+# Specify the thresholds you want to display on the plot
 thresholds_to_print <- c(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9)
-```
-Plotting the ROC curve with thresholds
-```{r}
+
+# Plotting the ROC curve with thresholds
 plot(roc_response, 
      main = "ROC Curve Analysis", 
      xlab = "False Positive Rate (1 - Specificity)", 
@@ -1085,7 +1017,7 @@ plot(roc_response,
 )
 ```
 
-ROC Curve and AUC Interpretation for Hospdead Variable:
+#### ROC Curve and AUC Interpretation for Hospdead Variable:
 
 - The AUC of 82.075% suggests the model is effective in distinguishing between patients who died in the hospital (hospdead = 1) and those who did not (hospdead = 0).
 - The True Positive Rate (TPR) or sensitivity indicates the model's accuracy in identifying actual in-hospital deaths.
@@ -1103,7 +1035,7 @@ Conclusion:
 - The model's strong AUC performance, considering the distribution of the `hospdead` variable, indicates its potential as a supportive tool for prognostic assessment in a hospital setting.
 - The plotted thresholds on the ROC curve provide insights into how different cut-off points will affect the model's prediction of in-hospital mortality.
 
-######Final Analysis and Interpretation of Model's Performance at Threshold 0.5:
+######Final Analysis and Interpretation of Model's Performance at Threshold = 0.23
 
 Model's Overall Accuracy:
 - At 79.2%, the model performs well, with a moderate Kappa (0.3813) suggesting useful predictive power.
