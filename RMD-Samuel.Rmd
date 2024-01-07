@@ -1,7 +1,7 @@
 ---
 output:
-  word_document: default
-  html_document: default
+  html_document:
+    code_folding: hide
 ---
 ## Data Loading and Inspection
 Load dataset:
@@ -177,11 +177,6 @@ sort(colnames(final_df))
 ```
 
 
-
-
-
-
-
 ############## Exploratory Data Analysis##############
 
 Check the distribution of charges
@@ -344,99 +339,76 @@ summary(lm.charges5)
 ```
 - Adjusted R-squared: 0.49; Residual SE: 0.9, Worse fit much more simpler
 
-```{r}
-
+```{r model-updating}
+# Performing a drop1 test on the model lm.charges5 to check which variable can be dropped
 drop1(lm.charges5, test = "F")
-```
 
-Updating the model by dropping variable with higher p-values
-```{r}
-lm.charges6 <- update(lm.charges5, . ~ . - income )
-```
+# Updating the model by dropping the 'income' variable due to its high p-value
+lm.charges6 <- update(lm.charges5, . ~ . - income)
 
-```{r}
+# Summarizing the updated model to review changes and check for model fit
 summary(lm.charges6)
 ```
+
 - Adjusted R-squared: 0.494; Residual SE: 0.9, better fit much more simpler
 
-Conducting drop1 analysis
 ```{r}
+# Conducting drop1 analysis to test individual model terms
 drop1(lm.charges6, test = "F")
-```
 
-Updating the model by dropping variables higher p-values
-```{r}
+# Updating the model by dropping variables with higher p-values, in this case 'bili'
 lm.charges7 <- update(lm.charges6, . ~ . - bili )
-```
 
-Summary of the updated model
-```{r}
+# Displaying the summary of the updated model to check for improvements
 summary(lm.charges7)
 ```
+
 - Adjusted R-squared: 0.491; Residual SE: 0.9, similar fit much more simpler
-
-Conducting drop1 analysis
-```{r}
+```{r model-updating}
+# Conducting drop1 analysis to see the effect of dropping each variable on model fit
 drop1(lm.charges7, test = "F")
-```
 
-Updating the model by dropping variables highest AIC impact
-```{r}
-lm.charges8 <- update(lm.charges7, . ~ . - hday )
-```
+# Updating the model by dropping the variable with the highest AIC impact
+lm.charges8 <- update(lm.charges7, . ~ . - hday)
 
-Summary of the updated model
-```{r}
+# Outputting the summary of the updated model to assess the effect of the changes
 summary(lm.charges8)
 ```
 - Adjusted R-squared: 0.42; Residual SE: 0.96, worse fit much more simpler
 
-Conducting drop1 analysis
+Conducting final drop1 analysis to check for any remaining insignificant variables.
 ```{r}
 drop1(lm.charges8, test = "F")
 ```
-
 Finally the model cannot be further simplified without loss of predictive power.
 
 ##########CROSS VALIDATION AND BEST MODEL SELECTION##########
 
-############CROSS VALIDATION##################
-```{r}
+Cross validating all the linear models to select the best model
+
+```{r cross-validation-process}
+# Load the required package
 library(caret)
-```
 
-Setting a seed for reproducibility
-```{r}
+# Setting a seed for reproducibility
 set.seed(123)
-```
 
-Create a function for cross-validation
-```{r}
+# Create a function for cross-validation
 cross_validate_model <- function(model, full_df, number_folds = 10) {
-```
-Extract the formula from the model
-```{r}
+  # Extract the formula from the model
   model_formula <- formula(model)
-```
   
-Set up cross-validation control
-```{r}
+  # Set up cross-validation control
   train_control <- trainControl(method = "cv", number = number_folds)
-```
   
-Train the model using cross-validation
-```{r}
+  # Train the model using cross-validation
   cv_model <- train(model_formula, data = full_df, method = "lm", trControl = train_control)
-```
   
-Return the results
-```{r}
+  # Return the results
   return(cv_model$results)
 }
-```
 
-Perform cross-validation for each of the remaining models
-```{r}
+# Perform cross-validation for each of the remaining models
 results1 <- cross_validate_model(lm.charges1, full_df)
 results2 <- cross_validate_model(lm.charges2, full_df)
 results3 <- cross_validate_model(lm.charges3, full_df)
@@ -445,16 +417,12 @@ results5 <- cross_validate_model(lm.charges5, full_df)
 results6 <- cross_validate_model(lm.charges6, full_df)
 results7 <- cross_validate_model(lm.charges7, full_df)
 results8 <- cross_validate_model(lm.charges8, full_df)
-```
 
-Print the results for each as a table
-```{r}
+# Load libraries for printing tables
 library(knitr)
 library(DT)
-```
 
-Rounding the values in the data frame
-```{r}
+# Rounding the values in the data frame
 results_df <- data.frame(
   Model = c("lm.charges1", "lm.charges2", "lm.charges3", "lm.charges4",
             "lm.charges5", "lm.charges6", "lm.charges7", "lm.charges8"),
@@ -465,21 +433,20 @@ results_df <- data.frame(
   MAE = round(c(results1$MAE, results2$MAE, results3$MAE, 
                 results4$MAE, results5$MAE, results6$MAE, results7$MAE, results8$MAE), 3)
 )
-```
 
-```{r}
-datatable(results_df, caption = 'Linear Model development Cross-validation Results', 
+# Display the results as a table
+datatable(results_df, caption = 'Linear Model Development Cross-validation Results', 
           options = list(pageLength = 8))
 ```
 
-####### Cross-validation Results Brief ########
 
+####### Linear Models Cross-validation Results Brief ########
 
 lm.charges1 and lm.charges2: Best accuracy (RMSE ~0.726, R-squared ~0.676).
 lm.charges3: Slightly lower performance.
 lm.charges4: Decent trade-off (RMSE: 0.731, R-squared: 0.671).
 lm.charges5: Lower accuracy (RMSE: 0.904, R-squared: 0.497), possible overfitting.
-Conclusion: lm.charges4 stands out for balancing simplicity and effectiveness.
+Conclusion: We select lm.charges4 for further development as it stands out for balancing simplicity and effectiveness.
 
 #######INTERACTION-TERMS EFFECT ON model 'lm.charges4'####
 Are there any interesting interactions effects on charges due to
@@ -487,19 +454,17 @@ any variables?
 1. Does the impact of age on healthcare charges vary significantly
 across different disease groups in the dataset?
 
-Adding an interaction term between age and disease group to the model
 ```{r}
+# Adding an interaction term between 'age' and 'dzgroup' to the model
 lm_age_dzgroup <- lm(log_charges ~ age * dzgroup 
-                                 + hospdead + edu + income
-                                 + hday + temp + bili + bun, 
-                                 data = full_df)
-```
+                     + hospdead + edu + income
+                     + hday + temp + bili + bun, 
+                     data = full_df)
 
-Checking the summary of the model to see the interaction effect
-```{r}
-summary(lm_age_dzgroup)
+# Checking the summary of the model to see the interaction effect
+summary_lm_age_dzgroup <- summary(lm_age_dzgroup)
+print(summary_lm_age_dzgroup)
 ```
-
 Summary of Interaction Effects between Age and Disease Groups
 - CHF: Significant decrease in charges with age.
 - Coma: Significant decrease in charges with age.
@@ -509,51 +474,45 @@ Summary of Interaction Effects between Age and Disease Groups
 2. Is the effect of hospital death on healthcare charges modified
 by the type of disease a patient has?
 Adding an interaction term between hospital stay length (hospdead) and disease group
-```{r}
+
+```{r model-summary}
+# Fit a linear model with interaction between hospdead and dzgroup, controlling for other variables
 lm_hospdead_dzgroup <- lm(log_charges ~ hospdead * dzgroup 
-                                      + age + + edu + income + hday 
+                                      + age + edu + income + hday 
                                       + temp + bili + bun, 
                                       data = full_df)
+
+# Check the summary of the model to see the interaction effect
+summary_lm <- summary(lm_hospdead_dzgroup)
+summary_lm
 ```
 
-Checking the summary of the model to see the interaction effect
-```{r}
-summary(lm_hospdead_dzgroup)
-```
+######CROSS VALIDATE Linear Models with Interaction terms AND COMPARE RESULTS#######
+Perform cross-validation for the Age-Disease Group & Hospdead-Disease Group Interaction Models
 
-
-######CROSS VALIDATE AND COMPARE RESULTS#######
-```{r}
-
+```{r cross-validation-results}
+# Set a seed for reproducibility
 set.seed(123)
-```
 
-Perform cross-validation for the Age-Disease Group Interaction Model
-```{r}
+# Perform cross-validation for the Age-Disease Group Interaction Model
 results_age_dzgroup <- cross_validate_model(lm_age_dzgroup, full_df)
-```
 
-Perform cross-validation for the Hospdead-Disease Group Interaction Model
-```{r}
+# Perform cross-validation for the Hospdead-Disease Group Interaction Model
 results_hospdead_dzgroup <- cross_validate_model(lm_hospdead_dzgroup, full_df)
-```
 
-Rounding and creating a data frame for the results
-```{r}
+# Rounding and creating a data frame for the results
 results_df2 <- data.frame(
   Model = c("lm.charges4", "lm_age_dzgroup", "lm_hospdead_dzgroup"),
   RMSE = round(c(results4$RMSE, results_age_dzgroup$RMSE, results_hospdead_dzgroup$RMSE), 3),
   Rsquared = round(c(results4$Rsquared, results_age_dzgroup$Rsquared, results_hospdead_dzgroup$Rsquared), 3),
   MAE = round(c(results4$MAE, results_age_dzgroup$MAE, results_hospdead_dzgroup$MAE), 3)
 )
-```
 
-Displaying the results in a datatable
-```{r}
+# Displaying the results in a datatable
 datatable(results_df2, caption = 'Selected Interaction Cross-validation Results', options = list(pageLength = 5))
 ```
 
-####### Cross-validation Results Brief ########
+####### Linear-Interaction Models Cross-validation Results Brief ########
 Built a Non-Linear model upon lm.charges4, lm_age_dzgroup and lm_hospdead_dzgroup,
 with RMSEs over 0.890 and R-squared around 0.500, are less precise but offer
 insights into specific age and disease group dynamics.
@@ -561,59 +520,38 @@ insights into specific age and disease group dynamics.
 ######Visual Exploration of Non-Linear Trends#########
 
 Loop through each numeric variable to visually explore potential non-linear relationships
-```{r}
+```{r scatterplot-with-loess}
+# Load the ggplot2 library for plotting
 library(ggplot2)
-```
 
-```{r}
+# Loop through each numeric variable to create scatterplots with a loess smoother
 for (var in numeric_vars) {
-```
-Creating a scatterplot with a smoother to detect non-linear trends
-```{r}
+  # Creating a scatterplot with a smoother to detect non-linear trends
   print(
     ggplot(final_df, aes_string(x = var, y = "log_charges")) +
       geom_point(shape = 19, size = 1, alpha = 0.5, color = "blue") +
-      geom_smooth(method = "loess",se = TRUE, color = "red", fill = "orange") +  # Loess smoother for non-linear trends
+      geom_smooth(method = "loess", se = TRUE, color = "red", fill = "orange") +  # Loess smoother for non-linear trends
       labs(title = paste("Exploring Non-Linear Relationship of", var, "with log_charges"),
            x = var, y = "log_charges")
   )
+}
 ```
+
   
 Each plot shows the relationship between 'log_charges' and a numeric variable
 The smoother (red line with orange confidence area) helps identify potential non-linear patterns
 
-EDA Summary: Non-Linear Effects
+### EDA Summary: Non-Linear Effects
 From the graph we can see that there are some non-linear effects in the following variables:
 Probable Quadratic Effects: meanbp, bun, ph,slos
 Polynomial Effects: temp, wblc, edu, hrt, hday, bili, num.co, alb
 No significant non-linear trend in age.
 
-
-#####Iterating on the lm.charges4, with non linear effects####
+### Iterating on the lm.charges4, with non linear effects
 
 Building a model incorporating observed non-linear effects
 
-Update the lm.charges4 model with non-linear terms
-```{r}
-nonlinear.lm.charges4 <- update(lm.charges4, . ~ . -slos - meanbp - bun - ph - alb 
-                                - temp - edu - hday - bili - num.co +
-                                  poly(slos, 2) +
-                                  poly(meanbp, 2) + 
-                                  poly(bun, 2) +
-                                  poly(ph, 2) +
-                                  poly(alb, 2) +
-                                  poly(temp, 3) + 
-                                  poly(edu, 3) +
-                                  poly(hday, 3) +
-                                  poly(bili, 3) +
-                                  poly(num.co, 3))
-```
 
-
-Summary of the updated model
-```{r}
-summary(nonlinear.lm.charges4)
-```
 
 num.co - Higher order terms are insignificant, change to linear
 bili - poly3 is insignificant, change to poly2
