@@ -1,7 +1,15 @@
 ---
+title: "Life Support"
+author: "Samuel Devdas, Pradip Ravichandran"
+date: "2024-01-12"
 output:
-  html_document:
-    code_folding: hide
+  prettydoc::html_pretty:
+    theme: cayman
+    css: styles.css
+    highlight: github
+    df_print: paged
+    toc: true
+    number_sections: true
 ---
 ## Data Loading and Inspection
 Load dataset:
@@ -1057,4 +1065,191 @@ Conclusions and Takeaways:
 - The model's high sensitivity is beneficial for scenarios where missing a non-death is critical.
 - To improve specificity, consider re-balancing the dataset or revising the feature selection.
 - Given the moderate Kappa and the significant Mcnemar's Test, further model tuning is advised to better balance sensitivity and specificity.
+
+### GLM: Poisson Regression Analysis
+
+Research Question:
+"What are the impacts of various patient characteristics and hospital variables 
+on the number of comorbidities (num.co) a patient has?"
+
+#### Poisson Distribution Visualization for num.co
+
+```{r, echo=FALSE}
+
+# Load necessary library
+library(ggplot2)
+
+# Histogram to visualize the distribution of num.co with ticks incremented by 1
+ggplot(final_df, aes(x = num.co)) +
+  geom_histogram(bins = 30, fill = "skyblue", color = "black") +
+  scale_x_continuous(breaks = seq(min(final_df$num.co), max(final_df$num.co), by = 1)) +
+  labs(title = "Histogram of Number of Comorbidities (num.co)",
+       x = "Number of Comorbidities",
+       y = "Frequency") +
+  theme_minimal()
+
+```
+The histogram shows that the distribution of num.co is right-skewed poisson distribution, with a long tail to the right.
+
+### Poisson Regression Model Building and Selection
+
+Building an initial Poisson regression model using all variables
+to evaluate their initial significance.
+
+```{r}
+
+poisson_model <- glm(num.co ~ ., family = "poisson", data = final_df)
+
+# Summary of the model
+summary(poisson_model)
+
+```
+We will build our Poisson regression model starting with 'adlsc' due to its high statistical significance, and then incrementally add other variables based on their significance and impact on model fit, carefully evaluating each addition for its contribution and potential interactions.
+
+```{r}
+
+# Model 1: Initial Model
+
+step1_poisson <- glm(num.co ~ adlsc, family = "poisson", data = final_df)
+summary(step1_poisson)
+
+# Model 2: Adding 'age'
+
+step2_poisson <- update(step1_poisson, . ~ . + age)
+summary(step2_poisson)
+
+# Model 3: Adding 'bun' and 'crea'
+
+step3_poisson <- update(step2_poisson, . ~ . + bun + crea)
+summary(step3_poisson)
+# crea is insignificant, so remove it from the model
+step3_poisson <- update(step3_poisson, . ~ . - crea)
+
+# Model 4: Adding 'charges'
+
+step4_poisson <- update(step3_poisson, . ~ . + charges)
+summary(step4_poisson)
+
+# Model 5: Adding 'temp', 'bili' and 'alb'
+
+step5_poisson <- update(step4_poisson, . ~ . + temp + bili + alb)
+summary(step5_poisson)
+
+# Model 6: Adding 'slos'
+
+step6_poisson <- update(step5_poisson, . ~ . + slos)
+summary(step6_poisson)
+
+# After adding 'slos', 'alb' becomes insignificant, so remove it from the model 
+step6_poisson <- update(step6_poisson, . ~ . - alb)
+summary(step6_poisson)
+
+# We remove 'bili' consequent to the removal of 'alb' as it is marginally insignificant now, but add 'pafi' as it is significant
+
+step6_poisson <- update(step6_poisson, . ~ . - bili + pafi)
+summary(step6_poisson)
+
+# Start adding categorical variables starting with 'dzgroup' and 'dementia'
+
+step7_poisson <- update(step6_poisson, . ~ . + dzgroup + dementia)
+summary(step7_poisson)
+
+# 'pafi' and 'income' are insignificant now, so remove them from the model
+
+step7_poisson <- update(step7_poisson, . ~ . - pafi - charges)
+summary(step7_poisson)
+
+# Check 'edu' and 'scoma' for significance
+
+step8_poisson <- update(step7_poisson, . ~ . + edu + scoma)
+summary(step8_poisson)
+
+# 'scoma' is insignificant, so remove it from the model
+
+step8_poisson <- update(step8_poisson, . ~ . - scoma)
+summary(step8_poisson)
+
+# Add 'hospdead' to the model
+
+step9_poisson <- update(step8_poisson, . ~ . + hospdead)
+summary(step9_poisson)
+
+# 'hospdead' is insignificant, so remove it from the model
+
+step9_poisson <- update(step9_poisson, . ~ . - hospdead)
+summary(step9_poisson)
+
+
+
+```
+
+
+### CROSS VALIDATE AND COMPARE RESULTS OF THE POISSON MODELS
+
+Perform cross-validation for each of the Poisson regression models
+```{r}
+
+# Create a function for cross-validation
+library(caret)
+
+cross_validate_poisson <- function(model_formula, full_df, number_folds = 10) {
+  # Set up cross-validation control
+  train_control <- trainControl(method = "cv", number = number_folds, classProbs = FALSE, summaryFunction = defaultSummary)
+
+  # Train the model using cross-validation
+  cv_model <- train(model_formula, data = full_df, method = "glm", family = "poisson", trControl = train_control)
+  
+  # Return the results
+  return(cv_model$results)
+}
+
+# Perform cross-validation for each of the remaining models
+# Set a seed for reproducibility
+set.seed(123)
+
+# Perform cross-validation for each model step
+results_step1 <- cross_validate_model(step1_poisson, final_df)
+results_step2 <- cross_validate_model(step2_poisson, final_df)
+results_step3 <- cross_validate_model(step3_poisson, final_df)
+results_step4 <- cross_validate_model(step4_poisson, final_df)
+results_step5 <- cross_validate_model(step5_poisson, final_df)
+results_step6 <- cross_validate_model(step6_poisson, final_df)
+results_step7 <- cross_validate_model(step7_poisson, final_df)
+results_step8 <- cross_validate_model(step8_poisson, final_df)
+results_step9 <- cross_validate_model(step9_poisson, final_df)
+
+# Rounding and creating a data frame for the results
+results_df <- data.frame(
+  Model = c("step1_poisson", "step2_poisson", "step3_poisson", 
+            "step4_poisson", "step5_poisson", "step6_poisson", 
+            "step7_poisson", "step8_poisson", "step9_poisson"),
+  RMSE = round(c(results_step1$RMSE, results_step2$RMSE, results_step3$RMSE, results_step4$RMSE, 
+                results_step5$RMSE, results_step6$RMSE, results_step7$RMSE, results_step8$RMSE, results_step9$RMSE), 3),
+  Rsquared = round(c(results_step1$Rsquared, results_step2$Rsquared, results_step3$Rsquared, results_step4$Rsquared, 
+                    results_step5$Rsquared, results_step6$Rsquared, results_step7$Rsquared, results_step8$Rsquared, results_step9$Rsquared), 3),
+  MAE = round(c(results_step1$MAE, results_step2$MAE, results_step3$MAE, results_step4$MAE, 
+               results_step5$MAE, results_step6$MAE, results_step7$MAE, results_step8$MAE, results_step9$MAE), 3)
+)
+
+# Displaying the results in a datatable
+datatable(results_df, caption = 'Poisson Model Cross-validation Results', options = list(pageLength = 10))
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
