@@ -1,6 +1,8 @@
 ---
-title: "Life Support"
-author: "Samuel Devdas, Pradip Ravichandran"
+title: "Exploring Factors Affecting Critically Ill Patients' Condition through Machine Learning Methods"
+author:
+  - Samuel Devdas
+  - Pradip Ravichandran
 date: "2024-01-12"
 output:
   prettydoc::html_pretty:
@@ -12,27 +14,33 @@ output:
     number_sections: true
 ---
 
+
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, results = 'markup')
 ```
 
-## Introduction and Background
+## Abstract
 
-This project, undertaken by Pradip Ravichandran and Samuel Devdas, is a rigorous exploration of a dataset featuring 9105 critically ill patients from five U.S. medical centers, recorded between 1989 and 1994. The dataset, sourced from https://archive.ics.uci.edu/dataset/880/support2, serves as a basis for developing a range of machine learning models. These models are primarily focused on accurately predicting medical charges, probability of death of critical patients and number of comorbidities for a patients on life support. The significance of this research lies in its application across various critical domains:
+This report details a comprehensive study conducted by Pradip Ravichandran and Samuel Devdas, focusing on the application of machine learning in healthcare economics and patient care. The study utilizes a dataset comprising 9105 critically ill patients from five U.S. medical centers, recorded between 1989 and 1994. The dataset, accessible at [Support2 Dataset](https://archive.ics.uci.edu/dataset/880/support2), forms the foundation for developing machine learning models aimed at predicting medical charges, the probability of death, and the number of comorbidities for patients on life support.
 
-Financial Management: The project aims to enhance budgeting and resource allocation efficiency for healthcare providers and patients, leveraging predictive analytics for better financial planning.
+## Introduction
 
-Insurance Processing: By accurately forecasting potential expenses, these models will provide valuable insights for patients navigating insurance and out-of-pocket costs.
+### Background and Significance
 
-Cost-Effectiveness: The analysis extends to evaluating the sustainability and practicality of life support treatments, facilitating informed healthcare decisions.
+The significance of this research lies in its broad application across various critical domains, including:
 
-Policy and Research Implications: The findings from this study are expected to contribute to healthcare policy formulation and economic research, impacting the overall standard and accessibility of medical care.
+1. **Financial Management:** The study seeks to improve budgeting and resource allocation in healthcare by employing predictive analytics for more efficient financial planning.
+2. **Insurance Processing:** These models are designed to forecast potential expenses, offering vital insights for patients in managing insurance and out-of-pocket costs.
+3. **Cost-Effectiveness:** An analysis focusing on the sustainability and practicality of life support treatments to aid in informed healthcare decision-making.
+4. **Policy and Research Implications:** The outcomes of this research are anticipated to inform healthcare policy and economic research, thereby influencing the standard and accessibility of medical care.
+5. **Ethical and Patient-Centric Considerations:** A key goal is to balance fiscal concerns with ethical considerations and patient-focused care in life support scenarios.
 
-Ethical and Patient-Centric Considerations: Central to this research is the aim to balance fiscal aspects with ethical and patient-focused care in life support situations.
+### Research Aims
 
-The project represents a critical intersection of machine learning, healthcare economics, and patient care, aiming to provide actionable insights for stakeholders in the healthcare sector.
+The project stands at the critical intersection of machine learning, healthcare economics, and patient care, with the primary aim of providing insights for stakeholders in the healthcare sector.
 
-## Data Loading and Inspection
+
+## Data Description and Inspection
 
 According to the HBiostat Repository (<https://hbiostat.org/data/repo/supportdesc>, Professor Frank Harrell) the following default values have been found to be useful in imputing missing baseline physiologic data:
 
@@ -43,8 +51,7 @@ According to the HBiostat Repository (<https://hbiostat.org/data/repo/supportdes
 | Bilirubin           | bili  | 1.01          |
 | Serum Creatinine    | crea  | 1.01          |
 | Blood urea nitrogen | bun   | 6.51          |
-| White blood count   | wblc  | 9             |
-| Urine output        | urine | 2502          |
+
 
 And following predictors should be removed, as they are findings from a previous model:
 
@@ -59,20 +66,31 @@ And following predictors should be removed, as they are findings from a previous
 | SUPPORT model 2-month survival estimate       | surv2m |
 | SUPPORT model 6-month survival estimate       | surv6m |
 
-#### Dataset Refinement for Predictive Modeling
 
-To enhance the predictive models' efficacy, the dataset was refined by:
+## Dataset Preparation for Predictive Modeling
 
-1. **Removing Post-Admission Metrics**: Excluded 'aps', 'dnr', 'dnrday', and 'surv2m' as they are not relevant for initial assessments.
+### Data Refinement Process
 
-2. **Omitting Variables with Limited Predictive Value**: 'sod', 'ca', and 'urine' were removed due to limited predictive value and redundancy.
+To ensure the efficacy of the predictive models, a rigorous dataset refinement process was undertaken. This process involved the following key steps:
 
-3. **Discarding Redundant or Low-Impact Variables**: Variables like 'diabetes', 'dzclass', 'hrt', 'd.time', 'death', and 'resp' were eliminated for being less impactful or redundant.
+1. **Removing Post-Admission Metrics**: 
+   - **Rationale**: The study's focus is on initial patient assessments; therefore, variables measured post-admission were deemed irrelevant.
+   - **Variables Excluded**: 'aps', 'dnr', 'dnrday', and 'surv2m'.
 
-This refinement process led to a focused dataset containing 20 key variables, optimizing it for effective predictive modeling.
+2. **Omitting Variables with Limited Predictive Value**: 
+   - **Rationale**: Some variables were found to offer limited predictive value or were redundant.
+   - **Variables Removed**: 'sod' (Sodium levels), 'ca' (Cancer), and 'urine'.
 
+3. **Discarding Redundant or Low-Impact Variables**: 
+   - **Rationale**: The goal was to streamline the dataset by eliminating variables that had minimal impact on the predictive models or were redundant.
+   - **Variables Eliminated**: 'diabetes', 'dzclass', 'hrt', 'd.time', 'death', and 'resp'.
 
+### Resulting Dataset
 
+After this refinement process, the dataset was narrowed down to 20 key variables. This optimization aimed at enhancing the dataset's suitability for effective predictive modeling, thereby improving the accuracy and relevance of the study's findings.
+
+<details>
+<summary>Click for Code and Outputs </summary>
 ```{r}
 # Load dataset
 df_support <- read.csv("support2.csv", header = TRUE, sep = ",")
@@ -97,11 +115,44 @@ selected_vars <- c("age", "hospdead", "slos", "dzgroup", "num.co",
 # Create a new data frame with only the selected variables
 df_support <- df_support[selected_vars]
 ```
+<details>
 
-After Inspecting closely, We see that for many categorical variables',
-the datatype are not 'Factors' for example - $ income  : chr  "$11-$25k" "$11-$25k" "under $11k"
+
 
 ## Data Cleaning and Preprocessing
+
+### Overview
+
+Data cleaning and preprocessing are critical steps in preparing a dataset for predictive modeling. In this phase, we focused on converting data into a format that can be effectively utilized in machine learning models, with particular attention to correctly formatting and processing categorical variables.
+
+### Process Description
+
+#### Categorical Variables Inspection
+
+Our initial step involved a detailed inspection of the dataset, particularly focusing on categorical variables. We identified issues with data types of some variables. For instance, the `income` variable was incorrectly classified as a character (`chr`) type, which should have been a categorical (`factor`) type. This misclassification can impact the model's performance as it treats these variables inappropriately. 
+
+- Example of Incorrect Data Type: `income: chr "$11-$25k" "$11-$25k" "under $11k"`
+
+#### Code Implementation
+
+1. **Identification of Categorical Variables:**
+   We began by grouping the variables of interest (`hospdead`, `dzgroup`, `income`, `dementia`) which are categorical in nature.
+
+2. **Verification of Unique Values:**
+   Using the `sapply` function, we checked for unique values in these variables within the dataset to understand their structure and variability.
+
+3. **Conversion to Factors:**
+   To correct the data types, we converted these variables into factors. Notably, `income` was converted to an ordered factor to maintain the inherent order in income categories. This conversion is crucial for models that are sensitive to the ordinal nature of the data.
+
+4. **Final Structure Validation:**
+   After the conversion, we rechecked the structure of the dataset to ensure that the changes were correctly implemented.
+
+This preprocessing step is essential to ensure that the subsequent analysis and model building are based on correctly formatted and meaningful data. Correctly classified categorical variables allow machine learning models to accurately interpret and utilize the data for predictions.
+
+
+
+<details>
+<summary>Click for Code and Outputs </summary>
 ```{r}
 # Identify and Group the categorical variables as categories of interest
 cat_interest <- c("hospdead", "dzgroup", "income", "dementia")
@@ -121,10 +172,32 @@ df_support$dementia <- factor(df_support$dementia)
 str(df_support[cat_interest])
 
 ```
+<details>
+
 
 ## Imputing Missing Values
 
+## Imputing Missing Values in Data Preprocessing
 
+### Introduction
+
+Handling missing data is a crucial step in the machine learning pipeline. Inconsistent handling of missing values can introduce bias or distort the underlying patterns in the data, impacting model performance.
+
+### Methodology
+
+1. **Predefined Imputation**: For certain variables (`alb`, `pafi`, `bili`, `crea`, `bun`), we impute missing values with predefined constants. This approach is often used when domain knowledge suggests a standard value or when a typical value is known. 
+
+2. **Mean Imputation for 'ph'**: We impute the variable `ph` with the mean of its non-missing values. Mean imputation is effective for normally distributed data or when the proportion of missing data is low.
+
+3. **Mode Imputation for Categorical Variables**: For categorical variables (`income`, `edu`), we employ mode imputation. This method is suitable for categorical data, substituting missing values with the most frequently occurring category.
+
+4. **Validation of Imputation**: Post-imputation, we verify the absence of missing values in our dataset. This step ensures data integrity and completeness.
+
+5. **Data Cleaning**: Finally, we remove any remaining rows with missing values. This step is vital in scenarios where imputation is not feasible or when the remaining missing data is minimal and unlikely to impact the dataset's overall quality.
+
+
+<details>
+<summary>Click for Code and Outputs </summary>
 ```{r}
 # Impute missing values with specified values
 impute_values <- c(
@@ -163,17 +236,34 @@ final_df <- df_support[complete.cases(df_support), ]
 dim(final_df)
 sort(colnames(final_df))
 ```
+<details>
+
+## Exploratory Data Analysis
+
+### Distribution Analysis of 'Charges'
+
+#### Initial Observation
+- The initial analysis of the `charges` variable reveals a highly right-skewed distribution. This skewness indicates that the majority of charges are less than 100,000, suggesting a concentration of lower values in our dataset.
+
+#### Transformation Strategy
+- To address the skewness and linearize the relationships, we apply a logarithmic transformation to the `charges` variable. This approach is standard in data analysis to handle skewed data distributions.
+
+#### Implementation Details
+1. **Logarithmic Transformation**:
+   - The logarithm of zero or negative numbers is undefined. To circumvent this issue, we add a small constant (1 in this case) to the `charges` before applying the logarithmic transformation. This step ensures that all values are positive and suitable for the transformation.
+   - `final_df$log_charges <- log(final_df$charges + 1)`
+
+2. **Re-evaluation of Distribution**:
+   - Post-transformation, the distribution of `log_charges` is examined. The histogram of log-transformed charges indicates a shift towards a more normal distribution. This transformation makes the data more suitable for various statistical and machine learning models that assume normality of features.
 
 
-############## Exploratory Data Analysis##############
-
-Check the distribution of charges
+<details>
+<summary>Click for Code and Outputs </summary>
 ```{r}
 hist(final_df$charges, breaks = 50, main = "Histogram of Charges", xlab = "Charges", col = "blue", border = "black")
-```
 
-The "charges" variable is highly right skewed with majority <100000
-```{r}
+# The "charges" variable is highly right skewed with majority <100000
+
 # To linearize the relationships, we take the logarithm of the 'charges' variable. However, since the log of zero or negative numbers is undefined, we add a small constant before taking the log to avoid errors. We then check the distribution of the resulting log-transformed charges.
 
 # Taking the logarithm of 'charges' to linearize relationships
@@ -185,9 +275,30 @@ hist(final_df$log_charges, breaks = 50,
      xlab = "Charges", col = "blue", border = "black")
 ```
 
-Now the the charges data looks normally distributed
 
-Make data ready for plotting and plot log_charges against all numeric variables
+# Data Visualization: Exploring Relationships in Healthcare Data
+
+## Objective
+
+The primary aim here is to visually explore the relationships between various numeric variables and `log_charges`, a logarithmic transformation of medical charges, in a healthcare dataset. This examination is pivotal in identifying potential predictors for healthcare costs.
+
+## Methodology
+
+### Preparing Data for Plotting
+
+- **Selection of Numeric Variables**: We began by isolating numeric variables from the dataset. These variables represent different quantitative aspects of healthcare data.
+
+- **Excluding Target Variables**: From this numeric subset, we intentionally excluded  'charges'. 'log_charges' is our variable of interest, against which we plot other variables, and 'charges' is its non-logarithmic counterpart.
+
+## Key Observations
+
+- **Variables such as 'slos', 'edu', 'scoma', 'hday', 'hrt', 'temp', 'bili', 'crea', and 'bun' showed a positive relationship with 'log_charges'**. This indicates that as these variables increase, there's a tendency for the logarithm of medical charges to increase as well.
+
+- **Variables like 'age', 'num.co', and 'pafi' exhibited a negative relationship with 'log_charges'**. This suggests that higher values of these variables are associated with lower logarithmic medical charges.
+
+
+<details>
+<summary>Click for Code and Outputs </summary>
 ```{r}
 # Make data ready for plotting
 numeric_vars <- names(final_df)[sapply(final_df, is.numeric)]
@@ -208,22 +319,42 @@ for (var in numeric_vars) {
   )
 }
 ```
+<details>
 
-From the scatterplots of all variables against 'charges',
-some of the interesting relationships are:
-Positive: slos,edu,scoma, hday,wblc, hrt,temp, bili, crea, bun
-Negative: age, num.co,  pafi
 
-#####Predicting Charges for Life Support Patients: A Critical Aspect of Healthcare Management
+## Predicting Charges for Life Support Patients: A Critical Aspect of Healthcare Management
 
-##############################################
+### Identifying Key Variables Influencing Life Support Patient Charges
 
-WHICH ARE THE MOST IMPORTANT VARIABLES ON WHICH 'log_charges' DEPEND UPON?
-DEVELOP MULTIPLE LINEAR MODELS TO  RELATIONSHIP BETWEEN CHARGES AND OTHER VARIABLES
+#### Overview
 
-1. Fitting the starting model using all the variables except 'charges'
+In this section, we discuss the development of multiple linear models to identify the most significant variables impacting the 'log_charges' for life support patients. This is a crucial aspect of healthcare management, as understanding these variables can aid in cost prediction and management.
 
+#### Model Development Process
+
+1. **Initial Model Creation**: We start by fitting a linear model (`lm.charges1`) using all available variables except for 'charges'. This model serves as a baseline to identify potential predictors of 'log_charges'.
+
+2. **Iterative Model Refinement**: 
+   - We employ a stepwise approach, systematically removing variables that show the least significance based on their p-values and F-test results. This process involves updating the model multiple times (from `lm.charges1` to `lm.charges8`) to refine its predictive accuracy.
+   - In each step, variables like 'crea', 'adlsc', 'alb', 'pafi', and 'scoma', among others, are excluded based on statistical tests (`drop1` analysis). 
+   - The aim is to simplify the model by keeping only those variables that significantly contribute to the prediction of 'log_charges'.
+
+3. **Assessing Model Fit**:
+   - Throughout this process, we continuously assess the model fit using summary statistics and Akaike Information Criterion (AIC). This helps in determining the balance between model complexity and explanatory power.
+   - By the final model (`lm.charges8`), we reach a point where further simplification would lead to a loss of predictive power, indicating an optimal set of variables.
+
+#### Insights and Decision-Making
+
+- **Variable Importance**: This process reveals the most critical variables impacting 'log_charges'. By removing variables one by one and observing the changes in the model's performance, we identify those factors that have the most substantial influence.
+
+- **Model Simplification**: The stepwise refinement underscores the importance of simplicity in model construction. By removing less significant variables, we enhance the model's interpretability and efficiency without compromising its predictive ability.
+
+- **Methodological Considerations**: This iterative approach demonstrates a careful balance between statistical rigor and practical relevance. The decisions made at each step are grounded in statistical tests and the overarching goal of model optimization.
+
+<details>
+<summary>Click for Code and Outputs </summary>
 ```{r}
+# Fitting the starting model using all the variables except 'charges'
 # Select only numeric columns from the data frame
 numeric_columns <- sapply(final_df, is.numeric)
 
@@ -235,138 +366,72 @@ lm.charges1 <- lm(log_charges~ ., data = full_df)
 
 # Display the summary of the model fit
 summary(lm.charges1)
-```
 
-Linear Model Summary: lm.charges1
-----------------------------------------------------
-Adjusted R-squared: 0.676 - Model explains ~67.6% of variability
-F-statistic highly significant - Strong overall model fit
-All variables significant except 'crea'
-Issues to Address:
-- Remove less significant predictors
-----------------------------------------------------
-We test to see which variables can be dropped, and
-Update the model by excluding identified variables
-```{r}
 # Dropping the least significant variable from the model and testing the difference
 drop1(lm.charges1, test = "F")
 
-# Updating the model by removing the 'crea' variable and summarizing the new model
+# Updating the model by excluding identified variables
 lm.charges2 <- update(lm.charges1, . ~ . - crea)
 summary(lm.charges2)
-```
 
-Refined Model Summary: lm.charges2
-----------------------------------------------------
-- Adjusted R-squared: 0.676; Residual SE: 0.724
-----------------------------------------------------
-We test to see which variables can be dropped:
-
-```{r}
 # Dropping variables with higher p-values and inspecting the AIC impact
 drop1(lm.charges2, test = "F")
 
 # Simplifying the model based on the drop1 analysis and keeping variables of interest
 # Removing the variables adlsc, alb, pafi, and scoma from the model
 lm.charges3 <- update(lm.charges2, . ~ . -adlsc -alb - pafi -scoma )
-
-# Displaying the summary of the updated model
 summary(lm.charges3)
-```
 
-- Adjusted R-squared: 0.675; Residual SE: 0.725, Same fit but simpler
-
-We test to see which variables can be dropped. Continue, Simplifying the model by removing variables with
-Higher p-values and high AIC impact, keeping variables of interest in the model
-```{r}
-# Drop insignificant variables from the linear model and test using an F-test
+# Dropping variables one by one from the model lm.charges3 and testing with F-test
 drop1(lm.charges3, test = "F")
 
-# Update the linear model by removing the variables 'ph', 'dementia', 'num.co', 'meanbp'
-# and then summarize the updated model
+# Updating the model lm.charges3 by removing the variables 'ph', 'dementia', 'num.co', 'meanbp'
+# and then summarizing the new model lm.charges4
 lm.charges4 <- update(lm.charges3, . ~ . - ph - dementia - num.co - meanbp )
 summary(lm.charges4)
-```
 
-- Adjusted R-squared: 0.671; Residual SE: 0.73, Same fit much simpler
-We test to see which variables can be dropped. 
-
-Continue, Simplifying the model by removing variables with
-Higher p-values and high AIC impact, keeping variables of interest in the model
-
-```{r}
-# Dropping variables one by one from the model lm.charges4 and testing with F-test
-drop1(lm.charges4, test = "F")
-
-# Updating the model lm.charges4 by removing the variables 'temp' and 'income'
-# and then summarizing the new model lm.charges5
-lm.charges5 <- update(lm.charges4, . ~ . - temp -income)
-summary(lm.charges5)
-```
-
-- Adjusted R-squared: 0.666; Residual SE: 0.735, Still similar fit much more simpler. 
-
-Now, keep Updating the model by dropping variables with Highest AIC impact as p-values are the same for all variables
-
-```{r}
 # Testing the model by dropping one variable at a time
-drop1(lm.charges5, test = "F")
+drop1(lm.charges4, test = "F")
 
 # Updating the model by removing the 'slos' variable
 lm.charges5 <- update(lm.charges4, . ~ . - slos )
-
-# Summary of the updated model
 summary(lm.charges5)
-```
-- Adjusted R-squared: 0.49; Residual SE: 0.9, Worse fit much more simpler
 
-```{r}
 # Performing a drop1 test on the model lm.charges5 to check which variable can be dropped
 drop1(lm.charges5, test = "F")
 
 # Updating the model by dropping the 'income' variable due to its high p-value
 lm.charges6 <- update(lm.charges5, . ~ . - income)
-
-# Summarizing the updated model to review changes and check for model fit
 summary(lm.charges6)
-```
 
-- Adjusted R-squared: 0.494; Residual SE: 0.9, better fit much more simpler
-
-```{r}
 # Conducting drop1 analysis to test individual model terms
 drop1(lm.charges6, test = "F")
 
 # Updating the model by dropping variables with higher p-values, in this case 'bili'
 lm.charges7 <- update(lm.charges6, . ~ . - bili )
-
-# Displaying the summary of the updated model to check for improvements
 summary(lm.charges7)
-```
 
-- Adjusted R-squared: 0.491; Residual SE: 0.9, similar fit much more simpler
-```{r}
 # Conducting drop1 analysis to see the effect of dropping each variable on model fit
 drop1(lm.charges7, test = "F")
 
 # Updating the model by dropping the variable with the highest AIC impact
 lm.charges8 <- update(lm.charges7, . ~ . - hday)
-
-# Outputting the summary of the updated model to assess the effect of the changes
 summary(lm.charges8)
-```
-- Adjusted R-squared: 0.42; Residual SE: 0.96, worse fit much more simpler
 
-Conducting final drop1 analysis to check for any remaining insignificant variables.
-```{r}
+# Conducting final drop1 analysis to check for any remaining insignificant variables.
 drop1(lm.charges8, test = "F")
+
+# Finally, the model cannot be further simplified without loss of predictive power.
+
 ```
-Finally the model cannot be further simplified without loss of predictive power.
+<details>
 
 ###CROSS VALIDATION AND BEST MODEL SELECTION##########
 
 Cross validating all the linear models to select the best model
 
+<details>
+<summary>Click for Code and Outputs </summary>
 ```{r}
 # Load the required package
 library(caret)
@@ -417,11 +482,11 @@ results_df <- data.frame(
 
 # Display the results as a table
 datatable(results_df, caption = 'Linear Model Development Cross-validation Results', 
-          options = list(pageLength = 8))
+          options = list(pageLength = 10 ))
 ```
+<details>
 
-
-####### Linear Models Cross-validation Results Brief ########
+#### Linear Models Cross-validation Results Brief ########
 
 lm.charges1 and lm.charges2: Best accuracy (RMSE ~0.726, R-squared ~0.676).
 lm.charges3: Slightly lower performance.
@@ -429,12 +494,16 @@ lm.charges4: Decent trade-off (RMSE: 0.731, R-squared: 0.671).
 lm.charges5: Lower accuracy (RMSE: 0.904, R-squared: 0.497), possible overfitting.
 Conclusion: We select lm.charges4 for further development as it stands out for balancing simplicity and effectiveness.
 
-#######INTERACTION-TERMS EFFECT ON model 'lm.charges4'####
+### INTERACTION-TERMS EFFECT ON model 'lm.charges4'####
+
 Are there any interesting interactions effects on charges due to
 any variables?
 1. Does the impact of age on healthcare charges vary significantly
 across different disease groups in the dataset?
 
+
+<details>
+<summary>Click for Code and Outputs </summary>
 ```{r}
 # Adding an interaction term between 'age' and 'dzgroup' to the model
 lm_age_dzgroup <- lm(log_charges ~ age * dzgroup 
@@ -446,6 +515,8 @@ lm_age_dzgroup <- lm(log_charges ~ age * dzgroup
 summary_lm_age_dzgroup <- summary(lm_age_dzgroup)
 print(summary_lm_age_dzgroup)
 ```
+<details>
+
 Summary of Interaction Effects between Age and Disease Groups
 - CHF: Significant decrease in charges with age.
 - Coma: Significant decrease in charges with age.
@@ -456,7 +527,9 @@ Summary of Interaction Effects between Age and Disease Groups
 by the type of disease a patient has?
 Adding an interaction term between hospital stay length (hospdead) and disease group
 
-```{r model-summary}
+<details>
+<summary>Click for Code and Outputs </summary>
+```{r}
 # Fit a linear model with interaction between hospdead and dzgroup, controlling for other variables
 lm_hospdead_dzgroup <- lm(log_charges ~ hospdead * dzgroup 
                                       + age + edu + income + hday 
@@ -467,11 +540,15 @@ lm_hospdead_dzgroup <- lm(log_charges ~ hospdead * dzgroup
 summary_lm <- summary(lm_hospdead_dzgroup)
 summary_lm
 ```
+<details>
 
-######CROSS VALIDATE Linear Models with Interaction terms AND COMPARE RESULTS#######
+#### CROSS VALIDATE Linear Models with Interaction terms AND COMPARE RESULTS
+
 Perform cross-validation for the Age-Disease Group & Hospdead-Disease Group Interaction Models
 
-```{r cross-validation-results}
+<details>
+<summary>Click for Code and Outputs </summary>
+```{r}
 # Set a seed for reproducibility
 set.seed(123)
 
@@ -492,16 +569,24 @@ results_df2 <- data.frame(
 # Displaying the results in a datatable
 datatable(results_df2, caption = 'Selected Interaction Cross-validation Results', options = list(pageLength = 5))
 ```
+<details>
 
-####### Linear-Interaction Models Cross-validation Results Brief ########
+
+#### Linear Models with Interaction: Cross-validation Results Brief 
+
 Built a Non-Linear model upon lm.charges4, lm_age_dzgroup and lm_hospdead_dzgroup,
 with RMSEs over 0.890 and R-squared around 0.500, are less precise but offer
 insights into specific age and disease group dynamics.
 
-######Visual Exploration of Non-Linear Trends#########
+### Non Linear Models
+
+#### Visual Exploration of Non-Linear Trends
 
 Loop through each numeric variable to visually explore potential non-linear relationships
-```{r scatterplot-with-loess}
+
+<details>
+<summary>Click for Code and Outputs </summary>
+```{r}
 # Load the ggplot2 library for plotting
 library(ggplot2)
 
@@ -517,18 +602,18 @@ for (var in numeric_vars) {
   )
 }
 ```
-
+<details>
   
 Each plot shows the relationship between 'log_charges' and a numeric variable
 The smoother (red line with orange confidence area) helps identify potential non-linear patterns
 
-### EDA Summary: Non-Linear Effects
+#### EDA Summary: Non-Linear Effects
 From the graph we can see that there are some non-linear effects in the following variables:
 Probable Quadratic Effects: meanbp, bun, ph,slos
-Polynomial Effects: temp, wblc, edu, hrt, hday, bili, num.co, alb
+Polynomial Effects: temp,edu, hrt, hday, bili, num.co, alb
 No significant non-linear trend in age.
 
-### Iterating on the lm.charges4, adding non linear effects
+#### Iterating on the lm.charges4, adding non linear effects
 
 Building a model incorporating observed non-linear effects
 
@@ -537,7 +622,8 @@ bili - poly3 is insignificant, change to poly2
 edu - higher order terms are insignificant, change to linear
 meanbp - quadratic term is insignificant, change to linear
 
-# Building a model incorporating observed non-linear effects
+<details>
+<summary>Click for Code and Outputs </summary>
 ```{r}
 # Update the lm.charges4 model with non-linear terms
 nonlinear.lm.charges4 <- update(lm.charges4, . ~ . -slos - meanbp - bun - ph - alb 
@@ -553,30 +639,32 @@ nonlinear.lm.charges4 <- update(lm.charges4, . ~ . -slos - meanbp - bun - ph - a
                                   poly(bili, 3) +
                                   poly(num.co, 3))
 
-
 # Summary of the updated model
 summary(nonlinear.lm.charges4)
 
-
 ```
-#### Simplify model, remove alb
+<details>
+
+#### Simplify model, remove poly terms for num.co, bili, meanbp
+
+<details>
+<summary>Click for Code and Outputs </summary>
 ```{r}
-lm.nonlinear.trim <- update(lm.charges4, . ~ . -slos - bun - ph - alb 
-                            - temp - hday - bili +
-                              poly(slos, 2) +
-                              poly(bun, 2) +
-                              poly(ph, 2) +
-                              poly(alb, 2) +
-                              poly(temp, 3) + 
-                              poly(hday, 3) +
-                              poly(bili, 2)
+lm.nonlinear.trim <- update(nonlinear.lm.charges4, . ~ .  
+                              - poly(num.co, 3) - poly(bili,3) - poly(meanbp, 2)
+                              - poly(alb, 2) - poly(ph, 2)
                               )
 summary(lm.nonlinear.trim)
 ```
+<details>
 
 ### CROSS VALIDATE AND COMPARE RESULTS OF THE NON-LINEAR MODELS
+
 Perform cross-validation for nonlinear.lm.charges4
-```{r, echo=FALSE}
+
+<details>
+<summary>Click for Code and Outputs </summary>
+```{r}
 # Perform cross-validation for nonlinear.lm.charges4
 results_nonlinear_charges4 <- cross_validate_model(nonlinear.lm.charges4, full_df)
 
@@ -602,11 +690,13 @@ selected_results_df <- data.frame(
 # Display the selected results table
 datatable(selected_results_df, caption = 'Selected Non-Linear Cross-validation Results Comparison', options = list(pageLength = 10))
 ```
+<details>
+
 ### Cross-validation Results Brief ###
 
 Nonlinear adaptations of lm.charges4 led to two distinct models: Nonlinear lm.charges4 and Trimmed Nonlinear Model.
 Nonlinear lm.charges4, with an RMSE of 0.649 and R-squared of 0.741, shows marked improvement over the linear lm.charges4 (RMSE: 0.731, R-squared: 0.671).
-The Trimmed Nonlinear Model, further refined with fewer variables, achieves a similar performance (RMSE: 0.66, R-squared: 0.742), suggesting effective optimization without loss of predictive ability.
+The Trimmed Nonlinear Model, further refined with fewer variables, achieves a similar performance (RMSE: 0.65, R-squared: 0.742), suggesting effective optimization without loss of predictive ability.
 
 Conclusion: The transition to nonlinear modeling significantly enhances the accuracy of the original lm.charges4, with the trimmed version balancing model complexity and predictive precision.
 
@@ -615,27 +705,33 @@ Conclusion: The transition to nonlinear modeling significantly enhances the accu
 We use variables from our most performant model:"lm.nonlinear.trim",
 to try to build a model that captures non-linear dynamics completely.
 
+
+<details>
+<summary>Click for Code and Outputs </summary>
 ```{r, echo=FALSE}
 # Load GAM library
 library(mgcv)
 
-# Using the variables from lm.nonlinear.trim to build a base GAM
-gam.model1 <- gam(log_charges ~ s(slos) + 
+# Using the numeric variables from lm.nonlinear.trim to build a base GAM
+gam.model1 <- gam(log_charges ~ s(age) +
+                                s(slos) + 
                                 s(bun) +
-                                s(ph) +
                                 s(alb) +
                                 s(temp) + 
                                 s(hday) +
-                                s(bili),
+                                s(bili) +
+                                s(edu) ,
                               data = full_df)
 
 # Summary of the GAM model
 summary(gam.model1)
 ```
+<details>
 
-### Cross-validate the GAM model ############################
+### Cross-validate the GAM model 
 
-
+<details>
+<summary>Click for Code and Outputs </summary>
 ```{r}
 # Load the 'mgcv' library
 library(mgcv)
@@ -695,8 +791,9 @@ selected_results_df <- data.frame(
 # Display the selected results table
 datatable(selected_results_df, caption = 'Selected GAM model Cross-validation Results Comparison', options = list(pageLength = 10))
 ```
+<details>
 
-####### Cross-validation Results Brief ########
+### GAM: Cross-validation Results
 
 Cross-validation Results Summary:
 
@@ -714,17 +811,20 @@ Trimmed Nonlinear Model:
 
 GAM Model:
 - RMSE: 0.659, R-squared: 0.732
-- Despite its flexibility in capturing complex patterns, it slightly underperforms compared to the Nonlinear models, with potential overfitting due to complexity.
+- Despite its flexibility in capturing complex patterns, it performs better to the Nonlinear models, with fewer variables, which shows overfitting in the Nonlinear models.
 
 Conclusion:
 - The Trimmed Nonlinear Model emerges as the best choice, offering high accuracy with a simpler, more interpretable model structure.
-- The GAM Model, while powerful, may require careful handling to avoid overfitting and ensure reliable predictions on new data.
+- The GAM Model, has the best performance, but lacks interpretability like the Nonlinear models and linear models.without the categorical variables.
 
 
-## GLM : LOGISTIC REGRESSION############
+## GLM: Generalized Linear Models
+
 What are the key predictors that significantly influence the likelihood of
 a patient's death in the hospital?
 
+<details>
+<summary>Click for Code and Outputs </summary>
 ```{r, echo=FALSE}
 # Make data ready for plotting
 numeric_vars <- names(final_df)[sapply(final_df, is.numeric)]
@@ -754,6 +854,8 @@ for (var in numeric_vars) {
 }
 
 ```
+<details>
+
 
 OBSERVATION: The visual inspection of scatterplots comparing each numeric
 variable with the hospdead status reveals a few potential separation patterns in variables like:
@@ -763,16 +865,23 @@ log_charges, num.co, age, adlsc and alb.
 
 Building an initial logistic regression model using all variables
 to evaluate their initial significance.
+
+<details>
+<summary>Click for Code and Outputs </summary>
 ```{r}
 logistic_full <- glm(hospdead ~ . , family = "binomial", data = final_df)
 summary(logistic_full)
 ```
+<details>
 
 The initial full model yields many significant terms, indicating variables of interest.
 like log_charges, age, adlsc, scoma, bun, bili, slos, dzgroup, income
 
 Therefore, we start building the model from scratch, beginning with the most promising predictor: age.
 
+
+<details>
+<summary>Click for Code and Outputs </summary>
 ```{r combined-modeling, echo=FALSE}
 # Logistic Regression Model Building and Selection
 
@@ -843,9 +952,15 @@ summary(logistic_10)
 logistic.simple <- step(logistic_10, direction = "backward")
 summary(logistic.simple)
 ```
+<details>
 
-###CROSS VALIDATION LOGISTIC MODELS AND COMPARE RESULTS
+
+### CROSS VALIDATION LOGISTIC MODELS AND COMPARE RESULTS
+
 Perform cross-validation for each of the logistic regression models
+
+<details>
+<summary>Click for Code and Outputs </summary>
 ```{r}
 
 cross_validate_model <- function(model, full_df, number_folds = 10) {
@@ -894,6 +1009,8 @@ results_df <- data.frame(
 # Display the summary table
 datatable(results_df, caption = 'Logistic Regression models Cross-validation Results', options = list(pageLength = 10))
 ```
+<details>
+
 ### Logistic regression Model Development and Performance Summary:
 
 Initial Steps:
@@ -917,10 +1034,13 @@ Final Takeaways:
 - This step-wise development process resulted in models that not only predict accurately but also provide meaningful insights into the factors affecting patient outcomes
 
 ### CONFUSION MATRIX AND ROC CURVE ANALYSIS
+
 Selecting logistic_10 as our best model based on cross-validation results
 We want to deep dive understand the performance of the model using a confusion matrix and ROC curve.
 
-```{r, echo=FALSE}
+<details>
+<summary>Click for Code and Outputs </summary>
+```{r}
 # Load the required libraries
 library(caret)
 
@@ -932,6 +1052,7 @@ predicted_class <- ifelse(predictions > 0.5, 1, 0)  # Assuming 0.5 as threshold
 conf_matrix0.5 <- confusionMatrix(as.factor(predicted_class), as.factor(final_df$hospdead))
 print(conf_matrix0.5)
 ```
+<details>
 
 #### Confusion Matrix (threshold = 0.5) Interpretation:
 
@@ -961,7 +1082,9 @@ Conclusion:
 
 #### ROC Curve and AUC Analysis
 
-```{r combined-roc-plot, echo=FALSE}
+<details>
+<summary>Click for Code and Outputs </summary>
+```{r }
 # Load the pROC library
 library(pROC)
 
@@ -992,6 +1115,7 @@ plot(roc_response,
      auc.polygon.col = "lightblue"
 )
 ```
+<details>
 
 #### ROC Curve and AUC Interpretation for Hospdead Variable:
 
@@ -1011,7 +1135,7 @@ Conclusion:
 - The model's strong AUC performance, considering the distribution of the `hospdead` variable, indicates its potential as a supportive tool for prognostic assessment in a hospital setting.
 - The plotted thresholds on the ROC curve provide insights into how different cut-off points will affect the model's prediction of in-hospital mortality.
 
-######Final Analysis and Interpretation of Model's Performance at Threshold = 0.23
+### Final Analysis and Interpretation of Model's Performance at Threshold = 0.23
 
 Model's Overall Accuracy:
 - At 79.2%, the model performs well, with a moderate Kappa (0.3813) suggesting useful predictive power.
@@ -1042,7 +1166,9 @@ on the number of comorbidities (num.co) a patient has?"
 
 #### Poisson Distribution Visualization for num.co
 
-```{r, echo=FALSE}
+<details>
+<summary>Click for Code and Outputs </summary>
+```{r}
 
 # Load necessary library
 library(ggplot2)
@@ -1057,6 +1183,8 @@ ggplot(final_df, aes(x = num.co)) +
   theme_minimal()
 
 ```
+<details>
+
 
 The histogram shows that the distribution of num.co is right-skewed poisson distribution, with a long tail to the right.
 
@@ -1065,6 +1193,9 @@ The histogram shows that the distribution of num.co is right-skewed poisson dist
 We will build our Poisson regression model starting with 'adlsc' due to its high statistical significance, and then incrementally add other variables based on their significance and impact on model fit, carefully evaluating each addition for its contribution and potential interactions.
 
 
+
+<details>
+<summary>Click for Code and Outputs </summary>
 ```{r}
 # Building an initial Poisson regression model using all variables
 # to evaluate their initial significance.
@@ -1145,11 +1276,14 @@ step9_poisson <- update(step9_poisson, . ~ . - hospdead)
 summary(step9_poisson)
 
 ```
-
+<details>
 
 ### CROSS VALIDATE AND COMPARE RESULTS OF THE POISSON MODELS
 
 Perform cross-validation for each of the Poisson regression models
+
+<details>
+<summary>Click for Code and Outputs </summary>
 ```{r}
 
 # Create a function for cross-validation
@@ -1198,6 +1332,7 @@ results_df <- data.frame(
 datatable(results_df, caption = 'Poisson Model Cross-validation Results', options = list(pageLength = 10))
 
 ```
+<details>
 
 #### Poisson Regression Model Development Summary:
 Throughout our model development process, we focused on refining a Poisson regression model to predict the number of comorbidities:
