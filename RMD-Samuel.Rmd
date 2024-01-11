@@ -426,9 +426,32 @@ drop1(lm.charges8, test = "F")
 ```
 <details>
 
-###CROSS VALIDATION AND BEST MODEL SELECTION##########
+### Linear Models: Cross-Validation and Best Model Selection
 
-Cross validating all the linear models to select the best model
+#### Overview
+
+In this phase, we focus on the critical step of cross-validating various linear models to determine the most effective one. Cross-validation is a robust method to evaluate the performance of models on unseen data, thereby reducing the risk of overfitting and ensuring that the selected model generalizes well to new data.
+
+#### Methodology
+
+- **Cross-Validation Technique**: We employ a 10-fold cross-validation technique using the `caret` package in R. This method splits the dataset into ten parts, trains the model on nine parts, and validates on the remaining part. This process is repeated ten times, each time with a different part used for validation.
+
+- **Models Evaluated**: Multiple linear regression models (`lm.charges1` to `lm.charges8`) are evaluated. Each model differs in terms of the features included or the way these features are processed.
+
+#### Results and Interpretation
+
+- **Performance Metrics**: We assess the models based on Root Mean Square Error (RMSE), R-squared, and Mean Absolute Error (MAE). Lower RMSE and MAE values indicate better model accuracy, while a higher R-squared value suggests better model fit.
+
+- **Top Performing Models**: 
+  - `lm.charges1` and `lm.charges2` showed the best accuracy with RMSE approximately 0.726 and R-squared around 0.676. 
+  - `lm.charges3` exhibited slightly lower performance.
+  - `lm.charges4` presented a decent balance between accuracy and model complexity (RMSE: 0.731, R-squared: 0.671).
+  - `lm.charges5` indicated lower accuracy (RMSE: 0.904, R-squared: 0.497), hinting at potential overfitting issues.
+
+#### Conclusion
+
+Based on the cross-validation results, we select `lm.charges4` for further development. This model is chosen for its balance between simplicity and effectiveness, indicating a good trade-off between accuracy and model complexity. This decision aligns with the principle of Occam's Razor in model selection, favoring models that achieve similar performance with fewer parameters or simpler structures.
+
 
 <details>
 <summary>Click for Code and Outputs </summary>
@@ -486,20 +509,28 @@ datatable(results_df, caption = 'Linear Model Development Cross-validation Resul
 ```
 <details>
 
-#### Linear Models Cross-validation Results Brief ########
-
-lm.charges1 and lm.charges2: Best accuracy (RMSE ~0.726, R-squared ~0.676).
-lm.charges3: Slightly lower performance.
-lm.charges4: Decent trade-off (RMSE: 0.731, R-squared: 0.671).
-lm.charges5: Lower accuracy (RMSE: 0.904, R-squared: 0.497), possible overfitting.
-Conclusion: We select lm.charges4 for further development as it stands out for balancing simplicity and effectiveness.
 
 ### INTERACTION-TERMS EFFECT ON model 'lm.charges4'####
 
-Are there any interesting interactions effects on charges due to
-any variables?
-1. Does the impact of age on healthcare charges vary significantly
-across different disease groups in the dataset?
+### Analysis of Interaction Terms on Model 'lm.charges4'
+
+#### Interaction Effects of Age and Disease Group on Healthcare Charges
+
+1. **Impact of Age Across Different Disease Groups**:
+   - We investigated how the impact of age on healthcare charges varies across different disease groups in the dataset. This analysis is particularly relevant to understand if aging influences the cost of healthcare differently for various medical conditions.
+   - **Findings**:
+     - For certain disease groups like Chronic Heart Failure (CHF), Coma, and Multiple Organ System Failure (MOSF) with Malignancy, there is a significant decrease in charges with age. This suggests that for these conditions, older patients might incur lower healthcare costs.
+     - However, for other conditions such as Cirrhosis, Colon Cancer, Chronic Obstructive Pulmonary Disease (COPD), and Lung Cancer, no significant interaction effect was observed. This indicates that the impact of age on healthcare charges is consistent across patients of different ages for these diseases.
+
+#### Interaction Effects of Hospital Death and Disease Group on Healthcare Charges
+
+2. **Effect of Hospital Death on Charges Modified by Disease Type**:
+   - The study also explored whether the effect of hospital death on healthcare charges is modified by the type of disease a patient has. This analysis aims to uncover any differential financial implications of hospital death across various disease conditions.
+   - **Findings**:
+     - The analysis revealed significant interactions between hospital death and specific disease groups. This implies that the financial impact of hospital deaths varies considerably depending on the patient's disease condition.
+     - For instance, certain diseases may exhibit higher healthcare charges in cases of hospital deaths, possibly indicating more resource-intensive care or complications leading to such outcomes.
+     - Conversely, other diseases might show less pronounced financial impacts in the event of hospital deaths, suggesting different care patterns or resource utilization.
+
 
 
 <details>
@@ -514,22 +545,17 @@ lm_age_dzgroup <- lm(log_charges ~ age * dzgroup
 # Checking the summary of the model to see the interaction effect
 summary_lm_age_dzgroup <- summary(lm_age_dzgroup)
 print(summary_lm_age_dzgroup)
-```
-<details>
 
-Summary of Interaction Effects between Age and Disease Groups
-- CHF: Significant decrease in charges with age.
-- Coma: Significant decrease in charges with age.
-- MOSF w/Malignancy: Significant decrease in charges with age.
-- Cirrhosis, Colon Cancer, COPD, Lung Cancer: No significant interaction.
+#Summary of Interaction Effects between Age and Disease Groups
+#- CHF: Significant decrease in charges with age.
+#- Coma: Significant decrease in charges with age.
+#- MOSF w/Malignancy: Significant decrease in charges with age.
+#- Cirrhosis, Colon Cancer, COPD, Lung Cancer: No significant interaction.
 
-2. Is the effect of hospital death on healthcare charges modified
-by the type of disease a patient has?
-Adding an interaction term between hospital stay length (hospdead) and disease group
+#2. Is the effect of hospital death on healthcare charges modified
+#by the type of disease a patient has?
+#Adding an interaction term between hospital stay length (hospdead) and disease group
 
-<details>
-<summary>Click for Code and Outputs </summary>
-```{r}
 # Fit a linear model with interaction between hospdead and dzgroup, controlling for other variables
 lm_hospdead_dzgroup <- lm(log_charges ~ hospdead * dzgroup 
                                       + age + edu + income + hday 
@@ -537,14 +563,36 @@ lm_hospdead_dzgroup <- lm(log_charges ~ hospdead * dzgroup
                                       data = full_df)
 
 # Check the summary of the model to see the interaction effect
-summary_lm <- summary(lm_hospdead_dzgroup)
-summary_lm
+print(summary(lm_hospdead_dzgroup))
+
 ```
 <details>
 
-#### CROSS VALIDATE Linear Models with Interaction terms AND COMPARE RESULTS
+### Interaction Terms Effect on Model 'lm.charges4'
 
-Perform cross-validation for the Age-Disease Group & Hospdead-Disease Group Interaction Models
+#### Cross-Validation of Linear Models with Interaction Terms
+
+In this section, we focus on evaluating the impact of interaction terms on the linear model 'lm.charges4'. Specifically, we perform cross-validation on two linear models incorporating interaction terms: Age-Disease Group and Hospdead-Disease Group. The goal is to compare these models with 'lm.charges4' to understand how interaction terms influence model performance.
+
+#### Methodology
+
+1. **Cross-Validation Procedure**: We conduct cross-validation for both interaction models. This approach helps us assess the model's performance across different subsets of the data, ensuring a robust evaluation.
+
+2. **Models Evaluated**:
+   - Age-Disease Group Interaction Model (`lm_age_dzgroup`).
+   - Hospdead-Disease Group Interaction Model (`lm_hospdead_dzgroup`).
+
+
+#### Results and Analysis
+
+- **Model Performance Comparison**:
+  - 'lm.charges4': RMSE = 0.732, Rsquared = 0.673, MAE = 0.571.
+  - 'lm_age_dzgroup': RMSE = 0.901, Rsquared = 0.499, MAE = 0.718.
+  - 'lm_hospdead_dzgroup': RMSE = 0.894, Rsquared = 0.507, MAE = 0.71.
+
+- **Interpretation**:
+  - The original model 'lm.charges4' outperforms the interaction models in all three metrics, indicating better predictive accuracy and fit, but addition of interaction terms help to understand the dynamics of specific age and disease groups.
+ 
 
 <details>
 <summary>Click for Code and Outputs </summary>
@@ -572,17 +620,29 @@ datatable(results_df2, caption = 'Selected Interaction Cross-validation Results'
 <details>
 
 
-#### Linear Models with Interaction: Cross-validation Results Brief 
-
-Built a Non-Linear model upon lm.charges4, lm_age_dzgroup and lm_hospdead_dzgroup,
-with RMSEs over 0.890 and R-squared around 0.500, are less precise but offer
-insights into specific age and disease group dynamics.
-
-### Non Linear Models
+### Non-Linear effect modelling using Linear Models
 
 #### Visual Exploration of Non-Linear Trends
 
-Loop through each numeric variable to visually explore potential non-linear relationships
+In this phase of our analysis, we focus on identifying non-linear relationships within our dataset. Non-linear models are often more complex and can capture patterns that linear models might miss. Our approach is to visually explore these potential non-linear trends among the numeric variables.
+
+##### Methodology
+
+- **Visual Analysis**: We use scatterplots with loess smoothers to visualize each numeric variable's relationship with `log_charges`. This method provides an intuitive way to detect non-linear trends.
+
+- **Tools Used**: For the visual exploration, we employ `ggplot2`, a powerful visualization library in R. 
+
+- **Process**: For each numeric variable, a scatterplot is generated. We overlay a loess smoother—a type of non-parametric regression method—on each plot. The smoother (illustrated as a red line with an orange confidence area) highlights the potential non-linear relationship between the variable and `log_charges`.
+
+##### EDA Summary: Non-Linear Effects
+
+- **Findings**: The visual exploration reveals several non-linear effects in the dataset:
+
+  - **Probable Quadratic Effects**: Variables such as `meanbp`, `bun`, `ph`, and `slos` demonstrate quadratic-like effects.
+
+  - **Polynomial Effects**: Other variables, including `temp`, `edu`, `hrt`, `hday`, `bili`, `num.co`, and `alb`, show patterns that suggest polynomial relationships.
+
+  - **Linear Trends**: Interestingly, the variable `age` does not exhibit significant non-linear trends, indicating a possibly linear relationship with `log_charges`.
 
 <details>
 <summary>Click for Code and Outputs </summary>
@@ -604,23 +664,25 @@ for (var in numeric_vars) {
 ```
 <details>
   
-Each plot shows the relationship between 'log_charges' and a numeric variable
-The smoother (red line with orange confidence area) helps identify potential non-linear patterns
 
-#### EDA Summary: Non-Linear Effects
-From the graph we can see that there are some non-linear effects in the following variables:
-Probable Quadratic Effects: meanbp, bun, ph,slos
-Polynomial Effects: temp,edu, hrt, hday, bili, num.co, alb
-No significant non-linear trend in age.
+#### Iterating on the lm.charges4 Model: Incorporating Non-Linear Effects
 
-#### Iterating on the lm.charges4, adding non linear effects
+In this stage of our linear model development, we focus on enhancing the lm.charges4 model by incorporating observed non-linear effects. This iterative process involves evaluating and adjusting the model to better capture the complexities in the data.
 
-Building a model incorporating observed non-linear effects
+### Building a Model with Non-Linear Effects
 
-num.co - Higher order terms are insignificant, change to linear
-bili - poly3 is insignificant, change to poly2
-edu - higher order terms are insignificant, change to linear
-meanbp - quadratic term is insignificant, change to linear
+- **Model Enhancement**: We augment the existing linear model (lm.charges4) by introducing non-linear terms. This is based on the observation that certain variables exhibit non-linear relationships with the target variable.
+
+- **Evaluation of Non-Linear Terms**:
+    - `num.co`: Higher order (polynomial) terms were found to be insignificant, leading to a decision to revert this variable to a linear term.
+    - `bili`: A cubic polynomial (`poly3`) was initially tested but proved insignificant, prompting a reduction to a quadratic term (`poly2`).
+    - `edu` and `meanbp`: Similar to `num.co`, higher order terms did not contribute significantly, thus reverting to linear terms.
+
+### Simplifying the Model
+
+- **Removing Insignificant Polynomial Terms**: Based on the analysis, we further simplify the model by removing polynomial terms for `num.co`, `bili`, and `meanbp`. Additionally, terms for `alb` and `ph` are also removed to reduce model complexity.
+
+- **Rationale**: This simplification step aims to streamline the model, enhancing its interpretability and efficiency without compromising on predictive accuracy.
 
 <details>
 <summary>Click for Code and Outputs </summary>
@@ -642,14 +704,9 @@ nonlinear.lm.charges4 <- update(lm.charges4, . ~ . -slos - meanbp - bun - ph - a
 # Summary of the updated model
 summary(nonlinear.lm.charges4)
 
-```
-<details>
-
 #### Simplify model, remove poly terms for num.co, bili, meanbp
 
-<details>
-<summary>Click for Code and Outputs </summary>
-```{r}
+
 lm.nonlinear.trim <- update(nonlinear.lm.charges4, . ~ .  
                               - poly(num.co, 3) - poly(bili,3) - poly(meanbp, 2)
                               - poly(alb, 2) - poly(ph, 2)
@@ -658,9 +715,25 @@ summary(lm.nonlinear.trim)
 ```
 <details>
 
-### CROSS VALIDATE AND COMPARE RESULTS OF THE NON-LINEAR MODELS
+### Cross-Validation and Comparison of Non-Linear Models
 
-Perform cross-validation for nonlinear.lm.charges4
+In this segment, we focus on the cross-validation and comparative analysis of non-linear models derived from the original linear model `lm.charges4`. Our goal is to understand how non-linear adaptations improve model performance and whether a more refined model (trimmed model) can maintain predictive accuracy with reduced complexity.
+
+#### Non-Linear Model Adaptations
+
+1. **Nonlinear lm.charges4**: This model represents the first step in moving away from linear assumptions. The cross-validation results indicate a significant improvement over the linear version:
+   - **RMSE (Root Mean Square Error)**: Reduced to 0.649 from 0.731 (linear model), indicating better accuracy.
+   - **R-squared**: Increased to 0.741 from 0.671 (linear model), showing enhanced predictive power.
+
+2. **Trimmed Nonlinear Model**: This version further simplifies the model by reducing the number of variables.
+   - **Performance Metrics**: It achieves an RMSE of 0.65 and an R-squared of 0.742, almost mirroring the performance of the full non-linear model.
+
+#### Comparative Insights
+
+- **Enhanced Accuracy with Non-Linearity**: The shift to a non-linear approach markedly improves the model's accuracy, as evidenced by lower RMSE and higher R-squared values compared to the linear counterpart.
+
+- **Balancing Complexity and Performance**: The Trimmed Nonlinear Model maintains similar levels of predictive accuracy as the full non-linear model, despite the reduction in variables. This suggests an effective balance between model simplicity and predictive capability.
+
 
 <details>
 <summary>Click for Code and Outputs </summary>
@@ -692,19 +765,28 @@ datatable(selected_results_df, caption = 'Selected Non-Linear Cross-validation R
 ```
 <details>
 
-### Cross-validation Results Brief ###
-
-Nonlinear adaptations of lm.charges4 led to two distinct models: Nonlinear lm.charges4 and Trimmed Nonlinear Model.
-Nonlinear lm.charges4, with an RMSE of 0.649 and R-squared of 0.741, shows marked improvement over the linear lm.charges4 (RMSE: 0.731, R-squared: 0.671).
-The Trimmed Nonlinear Model, further refined with fewer variables, achieves a similar performance (RMSE: 0.65, R-squared: 0.742), suggesting effective optimization without loss of predictive ability.
-
-Conclusion: The transition to nonlinear modeling significantly enhances the accuracy of the original lm.charges4, with the trimmed version balancing model complexity and predictive precision.
-
  
-## GENERALIZED ADDITIVE MODEL
-We use variables from our most performant model:"lm.nonlinear.trim",
-to try to build a model that captures non-linear dynamics completely.
+### Cross-Validation and Comparison of Non-Linear Models
 
+#### Generalized Additive Model (GAM) Overview
+
+In this section, we examine the application of a Generalized Additive Model (GAM) to capture non-linear dynamics in our dataset. Our aim is to build upon the insights gained from our previously most performant model, "lm.nonlinear.trim," and explore how a GAM can provide a more nuanced understanding of the relationships between variables.
+
+##### Model Building with GAM
+
+- **Model Foundation**: The GAM is constructed using variables from the "lm.nonlinear.trim" model. This approach ensures that we are building on a foundation of variables already proven to be significant in capturing non-linear patterns.
+
+- **Non-Linear Relationships**: GAM allows us to model non-linear relationships between the predictors and the response variable. By employing smooth functions , we can flexibly fit these non-linear relationships.
+
+##### Interpretation of GAM Summary
+
+- **Parametric Coefficients**: The significant intercept value suggests a strong baseline level in the log-transformed response variable, indicating the importance of the constant component in the model.
+
+- **Smooth Terms Significance**: Each smooth term (representing each variable) shows a degree of freedom (edf) significantly greater than 1, demonstrating that the relationships are indeed non-linear. The p-values of these terms are highly significant, reinforcing the importance of these non-linear dynamics in the model.
+
+- **Model Performance Metrics**:
+    - **Adjusted R-Squared (0.741)**: This high value indicates that a substantial proportion of the variance in the data is explained by the model.
+   
 
 <details>
 <summary>Click for Code and Outputs </summary>
@@ -728,7 +810,36 @@ summary(gam.model1)
 ```
 <details>
 
-### Cross-validate the GAM model 
+### Cross-Validation and Comparison of Non-Linear Models
+
+#### Cross-Validation of the GAM Model
+
+In this section, we assess the performance of the Generalized Additive Model (GAM) alongside other non-linear models using cross-validation techniques. Our goal is to identify the model that offers the best balance between accuracy and interpretability.
+
+#### Cross-Validation Results Summary
+
+1. **Linear Model (lm.charges4)**:
+   - RMSE: 0.731, R-squared: 0.671, MAE: 0.57
+   - This model provides a basic level of predictive accuracy and serves as a baseline for comparison.
+
+2. **Nonlinear Linear Model (Nonlinear lm.charges4)**:
+   - RMSE: 0.649, R-squared: 0.741, MAE: 0.502
+   - Demonstrates improved accuracy over the basic linear model, highlighting the benefits of incorporating nonlinearity.
+
+3. **Trimmed Nonlinear Model**:
+   - RMSE: 0.647, R-squared: 0.742, MAE: 0.503
+   - Offers a marginal improvement in accuracy over the full nonlinear model. Its simpler and more interpretable structure makes it an attractive option.
+
+4. **Generalized Additive Model (GAM)**:
+   - RMSE: 0.659, R-squared: 0.732
+   - Shows competitive performance, slightly lagging behind the trimmed nonlinear model. Its flexibility in capturing complex patterns is noteworthy, though it may compromise interpretability.
+
+#### Conclusion
+
+- The **Trimmed Nonlinear Model** stands out as the optimal choice, striking a balance between high accuracy and model simplicity.
+- The **GAM Model**, while demonstrating robust performance, falls short in terms of interpretability when compared to simpler models. Its complexity suggests potential overfitting, which is a critical aspect to consider in model selection.
+- This analysis underscores the importance of evaluating models not just on accuracy metrics, but also on their complexity and interpretability, ensuring that the chosen model aligns with the overarching goals of the analysis.
+
 
 <details>
 <summary>Click for Code and Outputs </summary>
@@ -793,35 +904,23 @@ datatable(selected_results_df, caption = 'Selected GAM model Cross-validation Re
 ```
 <details>
 
-### GAM: Cross-validation Results
 
-Cross-validation Results Summary:
+### Generalized Linear Models (GLM)
 
-lm.charges4:
-- RMSE: 0.731, R-squared: 0.671, MAE: 0.57
-- Provides a basic level of predictive accuracy, serving as a baseline.
+In this section, we explore the use of Generalized Linear Models (GLM) to identify key predictors influencing the likelihood of a patient's death in the hospital. The focus is on understanding which variables significantly contribute to this outcome.
 
-Nonlinear lm.charges4:
-- RMSE: 0.649, R-squared: 0.741, MAE: 0.502
-- Shows improved accuracy over the basic model, indicating the benefit of introducing nonlinearity.
+##### Methodology
 
-Trimmed Nonlinear Model:
-- RMSE: 0.647, R-squared: 0.742, MAE: 0.503
-- Offers a slight improvement in accuracy with a simpler, more interpretable model compared to the Nonlinear lm.charges4.
+1. **Data Visualization**: We employed scatterplots to visually inspect the relationship between each numeric variable and the 'hospdead' status (a binary indicator of patient death in the hospital). 
 
-GAM Model:
-- RMSE: 0.659, R-squared: 0.732
-- Despite its flexibility in capturing complex patterns, it performs better to the Nonlinear models, with fewer variables, which shows overfitting in the Nonlinear models.
+2. **Variable Selection**: Our analysis highlighted several variables, including `log_charges`, `num.co`, `age`, `adlsc`, and `alb`, that exhibit distinct separation patterns when plotted against the `hospdead` status. These variables are considered potential key predictors due to their noticeable patterns in the scatterplots.
 
-Conclusion:
-- The Trimmed Nonlinear Model emerges as the best choice, offering high accuracy with a simpler, more interpretable model structure.
-- The GAM Model, has the best performance, but lacks interpretability like the Nonlinear models and linear models.without the categorical variables.
+##### Observations
 
+- **Visual Insights**: The scatterplots provided preliminary insights into the relationship between various numeric variables and patient mortality. Variables showing clear separation patterns between the different `hospdead` statuses suggest a stronger association with the outcome.
 
-## GLM: Generalized Linear Models
+- **Potential Predictors**: Among the variables examined, `log_charges`, `num.co`, `age`, `adlsc`, and `alb` were identified as potentially significant predictors. These variables exhibited noticeable differences in distribution between patients who died and those who survived, as observed in the scatterplots.
 
-What are the key predictors that significantly influence the likelihood of
-a patient's death in the hospital?
 
 <details>
 <summary>Click for Code and Outputs </summary>
@@ -857,32 +956,37 @@ for (var in numeric_vars) {
 <details>
 
 
-OBSERVATION: The visual inspection of scatterplots comparing each numeric
-variable with the hospdead status reveals a few potential separation patterns in variables like:
-log_charges, num.co, age, adlsc and alb.
+#### Building a Logistic Regression Model
 
-### Building a Logistic Regression Model
+The development of our logistic regression model follows a systematic and iterative approach, emphasizing the importance of feature selection and model refinement. 
 
-Building an initial logistic regression model using all variables
-to evaluate their initial significance.
+- **Initial Full Model**: We started by constructing an initial logistic regression model using all available variables. This provided a baseline understanding of the significance of each variable in predicting hospital mortality. Significant variables such as `log_charges`, `age`, `adlsc`, `scoma`, `bun`, `bili`, `slos`, `dzgroup`, and `income` were identified.
+
+- **Iterative Model Building**: With the insights from the initial model, we began building the model from scratch, focusing on the most promising predictors. We started with `age`, given its strong initial significance.
+
+- **Sequential Feature Inclusion**: We then progressively added variables such as `hday`, `scoma`, `adlsc`, and `num.co`, evaluating their impact on the model's performance at each step. This approach allowed us to understand the incremental value each feature added to the model.
+
+- **Refinement and Simplification**: We observed that some variables, like `num.co` and `edu`, did not significantly improve the model and hence were removed. This step was crucial for maintaining model simplicity and avoiding overfitting.
+
+- **Inclusion of Clinical Variables**: Clinical variables like `alb`, `bili`, `crea`, `bun`, `pafi`, and `meanbp` were then incorporated to explore their predictive value in the context of hospital mortality.
+
+- **Disease Group and Demographics**: We also experimented with categorical variables such as `income` and `dzgroup`, assessing their impact on the prediction accuracy. The final model included the `dzgroup` variable due to its significant effect on patient outcomes.
+
+- **Backward Stepwise Regression**: The final step involved applying backward stepwise regression to the expanded model. This helped in further simplifying the model by removing statistically insignificant variables, resulting in a more efficient and interpretable model.
+
 
 <details>
 <summary>Click for Code and Outputs </summary>
 ```{r}
 logistic_full <- glm(hospdead ~ . , family = "binomial", data = final_df)
 summary(logistic_full)
-```
-<details>
-
-The initial full model yields many significant terms, indicating variables of interest.
-like log_charges, age, adlsc, scoma, bun, bili, slos, dzgroup, income
-
-Therefore, we start building the model from scratch, beginning with the most promising predictor: age.
 
 
-<details>
-<summary>Click for Code and Outputs </summary>
-```{r combined-modeling, echo=FALSE}
+#The initial full model yields many significant terms, indicating variables of interest.
+#like log_charges, age, adlsc, scoma, bun, bili, slos, dzgroup, income
+
+#Therefore, we start building the model from scratch, beginning with the most promising #predictor: age.
+
 # Logistic Regression Model Building and Selection
 
 ## Model 1: Initial Model
@@ -955,9 +1059,47 @@ summary(logistic.simple)
 <details>
 
 
-### CROSS VALIDATION LOGISTIC MODELS AND COMPARE RESULTS
+### Cross-Validation and Comparison of Non-Linear Models
 
-Perform cross-validation for each of the logistic regression models
+#### Logistic Regression Model Development and Performance Summary
+
+**Initial Steps:**
+1. **logistic_1 (Baseline with 'age')**: 
+   - **Accuracy**: 0.743. 
+   - **Observations**: A starting point, indicating room for improvement.
+
+2. **logistic_2 (Addition of 'hday')**: 
+   - **Accuracy**: 0.744, **Kappa**: 0.069.
+   - **Observations**: Marginal improvement, showing the slight impact of the 'hday' feature.
+
+**Incorporating Health Status:**
+3. **logistic_3 (Addition of 'scoma')**: 
+   - **Accuracy**: 0.781, **Kappa**: 0.295.
+   - **Observations**: Significant improvement, highlighting the importance of health status indicators.
+
+4. **logistic_4 (Introduction of 'adlsc')**: 
+   - **Accuracy**: 0.782, **Kappa**: 0.301.
+   - **Observations**: Consistent performance, consolidating gains with the addition of 'adlsc'.
+
+**Clinical and Demographic Expansion:**
+5. **logistic_6-8**: 
+   - **Accuracy**: Around 0.775, **Kappa**: Modest gains.
+   - **Observations**: Stability with further tuning using clinical and demographic variables, indicating the complex nature of these factors.
+
+**Refined and Optimal Models:**
+6. **logistic_9 (Inclusion of 'dzgroup')**: 
+   - **Accuracy**: 0.783, **Kappa**: 0.35.
+   - **Observations**: Peak performance, emphasizing the impact of disease grouping.
+
+7. **logistic_10 (Testing 'edu' and 'dementia')**: 
+   - **Accuracy**: 0.783, **Kappa**: 0.351.
+   - **Observations**: Sustained peak performance, confirming the optimized combination of variables.
+
+**Final Takeaways:**
+- The evolution from logistic_1 to logistic_10 demonstrates a careful balance in adding predictive variables while monitoring for overfitting, as indicated by stable AccuracySD.
+- The top-performing models, logistic_9 and logistic_10, highlight the effectiveness of a comprehensive approach that blends demographic, clinical, and disease-specific predictors.
+- This step-wise development process culminates in models that are not only accurate but also offer meaningful insights into the factors affecting patient outcomes.
+
 
 <details>
 <summary>Click for Code and Outputs </summary>
@@ -1011,32 +1153,35 @@ datatable(results_df, caption = 'Logistic Regression models Cross-validation Res
 ```
 <details>
 
-### Logistic regression Model Development and Performance Summary:
 
-Initial Steps:
-- logistic_1 (baseline with 'age'): Accuracy at 0.743; a starting point with room for improvement.
-- logistic_2 (addition of 'hday'): Slight increase in Accuracy to 0.744 and Kappa to 0.069, indicating marginal improvement.
+### Cross-Validation and Comparison of Non-Linear Models
 
-Incorporating Health Status:
-- logistic_3 (addition of 'scoma'): Significant leap in Accuracy to 0.781 and Kappa to 0.295, showing the importance of health status indicators.
-- logistic_4 (introduction of 'adlsc'): Maintains Accuracy at 0.782 and Kappa at 0.301, consolidating gains.
+#### CONFUSION MATRIX AND ROC CURVE ANALYSIS
 
-Clinical and Demographic Expansion:
-- logistic_6-8: Further fine-tuning with clinical and demographic variables. Accuracy stabilizes around 0.775, and Kappa sees modest gains, highlighting the complex nature of these factors.
+In this section, we delve into the performance evaluation of our chosen model, `logistic_10`, using detailed analysis tools like the confusion matrix and ROC curve. This analysis follows our decision to select `logistic_10` as the best model based on cross-validation results.
 
-Refined and Optimal Models:
-- logistic_9 (inclusion of 'dzgroup'): Peaks in Accuracy (0.783) and Kappa (0.35), underscoring the impact of disease grouping.
-- logistic_10 (testing 'edu' and 'dementia'): Sustains peak Accuracy and Kappa (0.351), confirming the optimized combination of variables.
+#### Confusion Matrix (threshold = 0.5) Interpretation:
 
-Final Takeaways:
-- The evolution from logistic_1 to logistic_10 illustrates a careful balance of adding predictive variables while monitoring overfitting (as shown by stable AccuracySD).
-- The best models, logistic_9 and logistic_10, demonstrate the effectiveness of a comprehensive approach, blending demographic, clinical, and disease-specific predictors.
-- This step-wise development process resulted in models that not only predict accurately but also provide meaningful insights into the factors affecting patient outcomes
+##### Model Performance:
+- **Accuracy (0.792)**: The model correctly predicts survival and non-survival in 79.2% of cases, indicating a high overall rate of correct predictions.
+- **Kappa (0.3821)**: Indicates a moderate agreement beyond chance between prediction and actual outcomes.
 
-### CONFUSION MATRIX AND ROC CURVE ANALYSIS
+##### Class-wise Performance:
+- **Sensitivity (92.33%)**: Demonstrates the model's high ability to correctly identify survivors (True Positive Rate).
+- **Specificity (41.32%)**: Shows a lower ability to correctly identify non-survivors (True Negative Rate), suggesting a potential bias towards predicting survival.
+- **Positive Predictive Value (81.95%)**: When the model predicts survival, there is an 81.95% chance it is correct.
+- **Negative Predictive Value (65.11%)**: When the model predicts non-survival, there is a 65.11% chance it is correct.
 
-Selecting logistic_10 as our best model based on cross-validation results
-We want to deep dive understand the performance of the model using a confusion matrix and ROC curve.
+##### Statistical Tests:
+- **P-Value [Acc > NIR]**: Less than 2.2e-16, indicating that the model is significantly better than the No Information Rate.
+- **Mcnemar's Test P-Value**: Less than 2.2e-16, suggesting a significant difference between type I and type II errors.
+
+##### Overall Inferences:
+- The model shows a more effective performance at identifying survivors than non-survivors.
+- The imbalance in sensitivity and specificity suggests a potential bias towards predicting survival.
+- The high prevalence rate (74.26%) could influence the predictive values, skewing them towards the more frequent class.
+- The Balanced Accuracy (66.82%) points out the need for improvement in managing class imbalance.
+
 
 <details>
 <summary>Click for Code and Outputs </summary>
@@ -1054,33 +1199,33 @@ print(conf_matrix0.5)
 ```
 <details>
 
-#### Confusion Matrix (threshold = 0.5) Interpretation:
 
-Model Performance:
-- Accuracy: 0.792. Model correctly predicts survival and non-survival in 79.2% of cases.
-- Kappa: 0.3813. Moderate agreement beyond chance between prediction and actual outcomes.
 
-Class-wise Performance:
-- Sensitivity: 92.34%. High ability to correctly identify survivors (True Positive Rate).
-- Specificity: 41.22%. Lower ability to correctly identify survivors (True Negative Rate).
-- Positive Predictive Value: 81.95%. If model predicts survival, 81.95% chance it's correct.
-- Negative Predictive Value: 65.06%. If model predicts non-survival, 65.06% chance it's correct.
-
-Statistical Tests:
-- P-Value [Acc > NIR]: < 2.2e-16. Model significantly better than No Information Rate.
-- Mcnemar's Test: < 2.2e-16. Significant difference between type I and type II errors.
-
-Overall Inferences:
-- Model is more effective at identifying survivors than non-survivors.
-- Imbalance in sensitivity and specificity suggests potential bias towards predicting survival.
-- High prevalence (74.29%) might influence the predictive values.
-- Balanced Accuracy (66.78%) indicates room for improvement in managing class imbalance.
-
-Conclusion:
-- While the model is quite accurate, there's a need for improved balance in sensitivity and specificity.
-- Consideration for class imbalance and further feature refinement could enhance model performance.
+### Cross-Validation and Comparison of Non-Linear Models
 
 #### ROC Curve and AUC Analysis
+
+##### Interpretation for Hospdead Variable
+
+- **AUC Analysis**: The AUC (Area Under the Curve) of 82.075% indicates that the model has a strong ability to distinguish between patients who died in the hospital (`hospdead = 1`) and those who did not (`hospdead = 0`).
+
+- **Sensitivity and Specificity**: The ROC (Receiver Operating Characteristic) curve analysis highlights the trade-off between the True Positive Rate (TPR or sensitivity) and the False Positive Rate (FPR or 1 - specificity). Sensitivity measures the model's accuracy in correctly identifying actual in-hospital deaths, while specificity assesses how well the model avoids false alarms.
+
+- **Impact of Class Distribution**: The prevalence of survivors in the dataset (`hospdead = 0`) can influence the model's performance, particularly its specificity. This underscores the importance of considering class distribution when evaluating model performance.
+
+- **Threshold Strategy**: Depending on the clinical context, different thresholds may be preferred. In scenarios where missing a death is critical, a lower threshold can ensure higher sensitivity. Conversely, to reduce false alarms, a higher threshold might be chosen to improve specificity.
+
+#### Final Analysis and Interpretation of Model's Performance
+
+- **Overall Accuracy and Kappa**: With an accuracy of 79.2% and a moderate Kappa of 0.3813, the model demonstrates a reasonable balance between sensitivity and specificity, indicating useful predictive power.
+
+- **Bias and Class Imbalance**: The model exhibits a potential bias towards predicting non-deaths, which could be due to the higher prevalence of this class in the dataset.
+
+- **Conclusions and Recommendations**:
+  - The high sensitivity is beneficial in critical scenarios where missing a non-death is crucial.
+  - To improve specificity, consideration should be given to methods like dataset rebalancing or revising feature selection.
+  - The moderate Kappa and significant Mcnemar's Test suggest further tuning of the model is necessary to achieve a better balance between sensitivity and specificity.
+
 
 <details>
 <summary>Click for Code and Outputs </summary>
@@ -1117,54 +1262,22 @@ plot(roc_response,
 ```
 <details>
 
-#### ROC Curve and AUC Interpretation for Hospdead Variable:
 
-- The AUC of 82.075% suggests the model is effective in distinguishing between patients who died in the hospital (hospdead = 1) and those who did not (hospdead = 0).
-- The True Positive Rate (TPR) or sensitivity indicates the model's accuracy in identifying actual in-hospital deaths.
-- The False Positive Rate (FPR) or 1 - specificity represents how often the model incorrectly predicts death among those who survived.
-
-Impact of Class Distribution:
-- The higher number of survivors (hospdead = 0) may influence the model's predictive performance, particularly its specificity.
-- Careful threshold selection is crucial to balance TPR and FPR given the class imbalance.
-
-Threshold Strategy for Clinical Utility:
-- In clinical settings where the cost of missing an actual death (False Negative) is high, a lower threshold may be warranted to ensure high sensitivity.
-- Conversely, to avoid overburdening the healthcare system with false alarms, a threshold that ensures an acceptable level of specificity without sacrificing too much sensitivity might be preferred.
-
-Conclusion:
-- The model's strong AUC performance, considering the distribution of the `hospdead` variable, indicates its potential as a supportive tool for prognostic assessment in a hospital setting.
-- The plotted thresholds on the ROC curve provide insights into how different cut-off points will affect the model's prediction of in-hospital mortality.
-
-### Final Analysis and Interpretation of Model's Performance at Threshold = 0.23
-
-Model's Overall Accuracy:
-- At 79.2%, the model performs well, with a moderate Kappa (0.3813) suggesting useful predictive power.
-
-True/False Positive/Negative Rates:
-- High Sensitivity (92.34%): Model effectively identifies true non-deaths.
-- Low Specificity (41.22%): Model less effective at identifying true deaths.
-- PPV (81.95%): High likelihood that a predicted non-death is correct.
-- NPV (65.06%): Moderate likelihood that a predicted death is correct.
-
-Statistical Significance:
-- The model is significantly better than guessing, supported by P-Value [Acc > NIR].
-
-Model Bias and Class Imbalance:
-- The model shows a potential bias towards predicting non-deaths.
-- The prevalence of non-deaths may be skewing predictive values.
-
-Conclusions and Takeaways:
-- The model's high sensitivity is beneficial for scenarios where missing a non-death is critical.
-- To improve specificity, consider re-balancing the dataset or revising the feature selection.
-- Given the moderate Kappa and the significant Mcnemar's Test, further model tuning is advised to better balance sensitivity and specificity.
 
 ### GLM: Poisson Regression Analysis
 
-Research Question:
-"What are the impacts of various patient characteristics and hospital variables 
-on the number of comorbidities (num.co) a patient has?"
+#### Research Context and Question
 
-#### Poisson Distribution Visualization for num.co
+The focus of this analysis is on understanding the influence of various patient characteristics and hospital variables on the number of comorbidities (num.co) a patient has. This research question is critical in shedding light on the multifaceted aspects that contribute to the health complexity of patients.
+
+#### Exploratory Data Analysis: Poisson Distribution of `num.co`
+
+- **Visualizing Distribution**: To gain insights into the distribution of the number of comorbidities (`num.co`), a histogram is utilized. 
+
+- **Observations from Visualization**: The histogram indicates a right-skewed Poisson distribution for `num.co`. This skewness, characterized by a long tail to the right, suggests that while most patients have a lower number of comorbidities, there is a significant subset with a much higher number. 
+
+- **Implications for Model Choice**: The observed Poisson distribution justifies the selection of Poisson regression for the analysis. Poisson regression is well-suited for count data, especially when the variance is close to the mean, which is typical in Poisson distributions.
+
 
 <details>
 <summary>Click for Code and Outputs </summary>
@@ -1186,12 +1299,32 @@ ggplot(final_df, aes(x = num.co)) +
 <details>
 
 
-The histogram shows that the distribution of num.co is right-skewed poisson distribution, with a long tail to the right.
-
 ### Poisson Regression Model Building and Selection
 
-We will build our Poisson regression model starting with 'adlsc' due to its high statistical significance, and then incrementally add other variables based on their significance and impact on model fit, carefully evaluating each addition for its contribution and potential interactions.
+#### Model Building Approach
 
+The development of the Poisson regression model followed a systematic and iterative approach, emphasizing the significance and impact of each variable on model fit. This process is marked by careful evaluation, ensuring that each variable added to the model contributes meaningfully and interacts appropriately with others.
+
+#### Key Steps in Model Development
+
+1. **Initial Model with All Variables**: The process began with an all-inclusive model to assess the initial significance of each variable.
+
+2. **Incremental Variable Addition**:
+   - The model building commenced with 'adlsc' due to its high statistical significance.
+   - Subsequent variables were added based on their significance and impact, including 'age', 'bun', 'temp', 'slos', 'dzgroup', 'dementia', and 'edu'.
+   - At each step, variables that lost significance or had marginal impact were removed, such as 'crea', 'alb', 'bili', 'pafi', 'charges', 'scoma', and 'hospdead'.
+
+3. **Evaluation and Refinement**: After each addition or removal, the model was re-evaluated for the significance of coefficients and overall model fit.
+
+#### Final Model Composition
+
+- The final model included significant variables: 'adlsc', 'age', 'bun', 'temp', 'slos', and various categories within 'dzgroup', along with 'dementia' and 'edu'. 
+- The coefficients of these variables provided insights into their relationship with the response variable.
+
+#### Interpretation of Model Coefficients
+
+- Each coefficient in the final model represents the log-relative change in the response variable for a one-unit change in the predictor, holding all other variables constant.
+- The significance levels of these coefficients indicate the robustness of their association with the response variable.
 
 
 <details>
@@ -1278,9 +1411,27 @@ summary(step9_poisson)
 ```
 <details>
 
-### CROSS VALIDATE AND COMPARE RESULTS OF THE POISSON MODELS
+### Poisson Regression Model Building and Selection
 
-Perform cross-validation for each of the Poisson regression models
+#### CROSS VALIDATE AND COMPARE RESULTS OF THE POISSON MODELS
+
+In this phase, we utilized cross-validation to evaluate and compare various Poisson regression models. This approach allowed us to robustly assess the performance of each model iteration across different segments of the data.
+
+**Initial Model Iterations (Steps 1-6):** 
+- Models from step1 to step6 demonstrated a gradual improvement. For instance, the RMSE (Root Mean Square Error) decreased from 1.332 in step1_poisson to 1.308 in step6_poisson, indicating more accurate predictions.
+- The R-squared value, a measure of how well the model explains the variability of the response data, saw a modest increase from 0.021 to 0.057 across these iterations.
+- MAE (Mean Absolute Error) also improved slightly, from 1.055 in the first model to 1.036 in the sixth, suggesting enhanced prediction accuracy.
+
+**Significant Improvement in Later Stages (Steps 7-9):**
+- A notable jump in model performance was observed in steps 7 to 9. For example, the RMSE significantly dropped to 1.165 in step9_poisson from 1.308 in step6_poisson.
+- The R-squared value experienced a substantial increase, reaching 0.251 in step9_poisson, compared to just 0.057 in step6_poisson. This leap indicates a considerably better fit of the model to the data.
+- Similarly, MAE decreased to 0.913 in step9_poisson from 1.036 in step6_poisson, further validating the model's enhanced predictive accuracy.
+
+**Optimal Model Identification:**
+- The `step7_poisson` model emerged as the optimal choice. It struck a balance between model complexity and prediction accuracy, boasting a notable R-squared improvement and lower values of RMSE (1.168) and MAE (0.915).
+- This model effectively predicts the number of comorbidities, highlighting the relevance of the variables included, especially the introduction of categorical variables in later steps that significantly improved model performance.
+- The model avoids overfitting, as evidenced by its consistent performance across the cross-validation folds.
+
 
 <details>
 <summary>Click for Code and Outputs </summary>
@@ -1334,14 +1485,7 @@ datatable(results_df, caption = 'Poisson Model Cross-validation Results', option
 ```
 <details>
 
-#### Poisson Regression Model Development Summary:
-Throughout our model development process, we focused on refining a Poisson regression model to predict the number of comorbidities:
 
-Early Stages (Steps 1-6): We began with a simple model and incrementally added variables like 'age', 'bun', and 'charges'. This phase yielded modest improvements in RMSE and R-squared.
-
-Significant Improvements (Steps 7-9): Introduction of categorical variables ('dzgroup', 'dementia') markedly increased R-squared, indicating their strong predictive power. Some variables became insignificant and were removed.
-
-Optimal Model Identification: The step7_poisson model emerged as optimal, balancing complexity and accuracy with notable R-squared improvement and low RMSE/MAE. It effectively predicts the number of comorbidities while avoiding overfitting.
 
 
 
