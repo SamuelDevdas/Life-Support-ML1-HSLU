@@ -11,37 +11,83 @@ output:
     toc: true
     number_sections: true
 ---
-## Data Loading and Inspection
-Load dataset:
-```{r}
-df_support <- read.csv("support2.csv", header = TRUE, sep = ",")
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
 ```
 
-Check the Variables' descriptions
+## Introduction and Background
+
+This project, undertaken by Pradip Ravichandran and Samuel Devdas, is a rigorous exploration of a dataset featuring 9105 critically ill patients from five U.S. medical centers, recorded between 1989 and 1994. The dataset, sourced from https://archive.ics.uci.edu/dataset/880/support2, serves as a basis for developing a range of machine learning models. These models are primarily focused on accurately predicting medical charges, probability of death of critical patients and number of comorbidities for a patients on life support. The significance of this research lies in its application across various critical domains:
+
+Financial Management: The project aims to enhance budgeting and resource allocation efficiency for healthcare providers and patients, leveraging predictive analytics for better financial planning.
+
+Insurance Processing: By accurately forecasting potential expenses, these models will provide valuable insights for patients navigating insurance and out-of-pocket costs.
+
+Cost-Effectiveness: The analysis extends to evaluating the sustainability and practicality of life support treatments, facilitating informed healthcare decisions.
+
+Policy and Research Implications: The findings from this study are expected to contribute to healthcare policy formulation and economic research, impacting the overall standard and accessibility of medical care.
+
+Ethical and Patient-Centric Considerations: Central to this research is the aim to balance fiscal aspects with ethical and patient-focused care in life support situations.
+
+The project represents a critical intersection of machine learning, healthcare economics, and patient care, aiming to provide actionable insights for stakeholders in the healthcare sector.
+
+## Data Loading and Inspection
+
+According to the HBiostat Repository (<https://hbiostat.org/data/repo/supportdesc>, Professor Frank Harrell) the following default values have been found to be useful in imputing missing baseline physiologic data:
+
+| Baseline Variable   | short | Default Value |
+|---------------------|-------|---------------|
+| Serum albumin       | alb   | 3.5           |
+| PaO2/FiO2 ratio     | pafi  | 333.3         |
+| Bilirubin           | bili  | 1.01          |
+| Serum Creatinine    | crea  | 1.01          |
+| Blood urea nitrogen | bun   | 6.51          |
+| White blood count   | wblc  | 9             |
+| Urine output        | urine | 2502          |
+
+And following predictors should be removed, as they are findings from a previous model:
+
+| Baseline Variable                             | short  |
+|-----------------------------------------------|--------|
+| APACHE III day 3 physiology score             | aps    |
+| Patient had DNR order                         | dnr    |
+| Day of DNR order (<0 if before study)         | dnrday |
+| Physician’s 2-month survival estimate for pt. | prg2m  |
+| Physician’s 6-month survival estimate for pt. | prg6m  |
+| SUPPORT day 3 physiology score                | sps    |
+| SUPPORT model 2-month survival estimate       | surv2m |
+| SUPPORT model 6-month survival estimate       | surv6m |
+
+#### Dataset Refinement for Predictive Modeling
+
+To enhance the predictive models' efficacy, the dataset was refined by:
+
+1. **Removing Post-Admission Metrics**: Excluded 'aps', 'dnr', 'dnrday', and 'surv2m' as they are not relevant for initial assessments.
+
+2. **Omitting Variables with Limited Predictive Value**: 'sod', 'ca', and 'urine' were removed due to limited predictive value and redundancy.
+
+3. **Discarding Redundant or Low-Impact Variables**: Variables like 'diabetes', 'dzclass', 'hrt', 'd.time', 'death', and 'resp' were eliminated for being less impactful or redundant.
+
+This refinement process led to a focused dataset containing 20 key variables, optimizing it for effective predictive modeling.
+
+
+
 ```{r}
+# Load dataset
+df_support <- read.csv("support2.csv", header = TRUE, sep = ",")
+
+# Check the Variables' descriptions
 df_description <- read.csv("support-variables-description.csv", header = TRUE, sep = ",")
 df_description
-```
 
-Inspect dataset
-```{r}
+# Inspect dataset
 head(df_support, 3)
-```
 
-Check structure of the dataset
-```{r}
+# Check structure of the dataset
 str(df_support)
 dim(df_support)
-```
-### Refining the Dataset for Predictive Modeling
-Removing variables based on domain knowledge and previous model insights:
-- Variables like 'aps', 'dnr', 'dnrday', 'surv2m' are post-admission metrics, not relevant at initial assessment.
-- Clinical measurements 'sod', 'ca', 'urine' show limited predictive value and redundancy.
-- Redundant or less impactful variables: 'diabetes', 'dzclass', 'hrt', 'd.time', 'death', 'resp', wblc
 
-Keeping only 20 variables of interest
-
-```{r}
 # Subset the data frame
 selected_vars <- c("age", "hospdead", "slos", "dzgroup", "num.co", 
                    "edu", "income", "scoma", "charges", "hday", 
@@ -50,138 +96,72 @@ selected_vars <- c("age", "hospdead", "slos", "dzgroup", "num.co",
 
 # Create a new data frame with only the selected variables
 df_support <- df_support[selected_vars]
-
 ```
-
 
 After Inspecting closely, We see that for many categorical variables',
 the datatype are not 'Factors' for example - $ income  : chr  "$11-$25k" "$11-$25k" "under $11k"
 
 ## Data Cleaning and Preprocessing
-Identify and Group the categorical variables as categories of interest
 ```{r}
+# Identify and Group the categorical variables as categories of interest
 cat_interest <- c("hospdead", "dzgroup", "income", "dementia")
-```
 
-Apply unique function to validate that the cat_interest have unique categorical values and check their structure
-```{r}
+# Apply unique function to validate that the cat_interest have unique categorical values and check their structure
 unique_values <- sapply(df_support[cat_interest], unique)
 str(unique_values)
-```
 
-Convert categorical and ordinal variables to factors
-
-```{r}
+# Convert categorical and ordinal variables to factors
 df_support$hospdead <- factor(df_support$hospdead)
 df_support$dzgroup <- factor(df_support$dzgroup)
 df_support$income <- factor(df_support$income, ordered = TRUE, 
                             levels = c("under $11k", "$11-$25k", "$25-$50k", ">$50k"))
 df_support$dementia <- factor(df_support$dementia)
 
+# Check structure of dataset to confirm changes
+str(df_support[cat_interest])
+
 ```
 
-Check structure of dataset to confirm changes
-```{r}
-str(df_support[cat_interest])
-```
 ## Imputing Missing Values
 
-According to the HBiostat Repository (https://hbiostat.org/data/repo/supportdesc,
-Professor Frank Harrell) the following default values have been found to be useful in imputing missing baseline physiologic data:
-Baseline Variable	Normal Fill-in Value
-- Serum albumin (alb)	3.5
-- PaO2/FiO2 ratio (pafi) 	333.3
-- Bilirubin (bili)	1.01
-- Creatinine (crea)	1.01
-- bun	6.51
-- White blood count (wblc)	9
-- Urine output (urine)	2502
-
-Impute other variables:
-- income
-- edu
-- ph
-
-
-
 
 ```{r}
+# Impute missing values with specified values
 impute_values <- c(
     alb = 3.5, pafi = 333.3, bili = 1.01,
     crea = 1.01, bun = 6.51
 )
-```
 
-Loop through the vector to impute values
-```{r}
+# Loop through the vector to impute values
 for (var in names(impute_values)) {
     df_support[[var]][is.na(df_support[[var]])] <- impute_values[var]
 }
-```
 
-```{r}
-head(df_support)
-```
-
-
-Impute the variable "ph" with mean value
-Calculate the mean for the ph Column
-```{r}
+# Impute the variable "ph" with the mean value
 mean_ph <- mean(df_support$ph, na.rm = TRUE)
-
-# Impute missing values with the mean value
 df_support$ph[is.na(df_support$ph)] <- mean_ph
-```
 
-Impute the variable "income" with the mode value
-Check the frequency of each category in the variable "income"
-
-```{r}
-# Define a Function to Calculate the Mode
+# Impute the variable "income" with the mode value
 getMode <- function(v) {
     uniqv <- unique(na.omit(v))
     uniqv[which.max(tabulate(match(v, uniqv)))]
 }
-
-# Calculate the Mode for the Income Column
 mode_value <- getMode(df_support$income)
-
-# Impute missing values with the mode value
 df_support$income[is.na(df_support$income)] <- mode_value
 
-```
-
-Impute the variable "edu" with the mode value
-
-```{r}
-# Calculate the Mode for the edu Column
+# Impute the variable "edu" with the mode value
 mode_value <- getMode(df_support$edu)
-
-# Impute missing values with the mode value
-
 df_support$edu[is.na(df_support$edu)] <- mode_value
 
-sum(is.na(df_support))
-
-```
-
-Check for Missing Values in df_support and sort in descending order
-
-```{r}
+# Check for Missing Values in df_support and sort in descending order
 na_counts_col <- colSums(is.na(df_support))
 na_counts_col <- sort(na_counts_col, decreasing = TRUE)
 na_counts_col[1:15]
 
-```
-
-## Drop all the remaining rows with missing values.
-Subset all rows with complete cases
-```{r}
+# Drop all the remaining rows with missing values.
 final_df <- df_support[complete.cases(df_support), ]
-sum(is.na(final_df))
 dim(final_df)
 sort(colnames(final_df))
-
 ```
 
 
@@ -236,13 +216,6 @@ Negative: age, num.co,  pafi
 
 #####Predicting Charges for Life Support Patients: A Critical Aspect of Healthcare Management
 
-Accurate prediction of charges for life support patients is crucial for:
-
-Financial Management: Aids healthcare providers and patients in budgeting and resource allocation.
-Insurance Processing: Informs patients about potential expenses for insurance and out-of-pocket costs.
-Cost-Effectiveness: Supports decision-making regarding the viability and sustainability of life support treatments.
-Policy and Research: Guides healthcare policy decisions and economic studies, impacting overall healthcare quality and accessibility.
-Effective charge prediction is vital for balancing economic considerations with ethical and patient-centered care in life support scenarios.
 ##############################################
 
 WHICH ARE THE MOST IMPORTANT VARIABLES ON WHICH 'log_charges' DEPEND UPON?
@@ -267,7 +240,7 @@ summary(lm.charges1)
 Linear Model Summary: lm.charges1
 ----------------------------------------------------
 Adjusted R-squared: 0.676 - Model explains ~67.6% of variability
-F-statistic highly significant - Strong overall model predictive power
+F-statistic highly significant - Strong overall model fit
 All variables significant except 'crea'
 Issues to Address:
 - Remove less significant predictors
@@ -289,7 +262,7 @@ Refined Model Summary: lm.charges2
 ----------------------------------------------------
 We test to see which variables can be dropped:
 
-```{r model-simplification}
+```{r}
 # Dropping variables with higher p-values and inspecting the AIC impact
 drop1(lm.charges2, test = "F")
 
@@ -390,7 +363,7 @@ drop1(lm.charges8, test = "F")
 ```
 Finally the model cannot be further simplified without loss of predictive power.
 
-##########CROSS VALIDATION AND BEST MODEL SELECTION##########
+###CROSS VALIDATION AND BEST MODEL SELECTION##########
 
 Cross validating all the linear models to select the best model
 
@@ -874,12 +847,7 @@ summary(logistic.simple)
 ###CROSS VALIDATION LOGISTIC MODELS AND COMPARE RESULTS
 Perform cross-validation for each of the logistic regression models
 ```{r}
-library(caret)
 
-# Setting a seed for reproducibility
-set.seed(123)
-
-# Create a function for cross-validation
 cross_validate_model <- function(model, full_df, number_folds = 10) {
 
   # Extract the formula from the model
@@ -1089,24 +1057,21 @@ ggplot(final_df, aes(x = num.co)) +
   theme_minimal()
 
 ```
+
 The histogram shows that the distribution of num.co is right-skewed poisson distribution, with a long tail to the right.
 
 ### Poisson Regression Model Building and Selection
 
-Building an initial Poisson regression model using all variables
-to evaluate their initial significance.
+We will build our Poisson regression model starting with 'adlsc' due to its high statistical significance, and then incrementally add other variables based on their significance and impact on model fit, carefully evaluating each addition for its contribution and potential interactions.
+
 
 ```{r}
-
+# Building an initial Poisson regression model using all variables
+# to evaluate their initial significance.
 poisson_model <- glm(num.co ~ ., family = "poisson", data = final_df)
 
 # Summary of the model
 summary(poisson_model)
-
-```
-We will build our Poisson regression model starting with 'adlsc' due to its high statistical significance, and then incrementally add other variables based on their significance and impact on model fit, carefully evaluating each addition for its contribution and potential interactions.
-
-```{r}
 
 # Model 1: Initial Model
 
@@ -1179,8 +1144,6 @@ summary(step9_poisson)
 step9_poisson <- update(step9_poisson, . ~ . - hospdead)
 summary(step9_poisson)
 
-
-
 ```
 
 
@@ -1235,6 +1198,16 @@ results_df <- data.frame(
 datatable(results_df, caption = 'Poisson Model Cross-validation Results', options = list(pageLength = 10))
 
 ```
+
+#### Poisson Regression Model Development Summary:
+Throughout our model development process, we focused on refining a Poisson regression model to predict the number of comorbidities:
+
+Early Stages (Steps 1-6): We began with a simple model and incrementally added variables like 'age', 'bun', and 'charges'. This phase yielded modest improvements in RMSE and R-squared.
+
+Significant Improvements (Steps 7-9): Introduction of categorical variables ('dzgroup', 'dementia') markedly increased R-squared, indicating their strong predictive power. Some variables became insignificant and were removed.
+
+Optimal Model Identification: The step7_poisson model emerged as optimal, balancing complexity and accuracy with notable R-squared improvement and low RMSE/MAE. It effectively predicts the number of comorbidities while avoiding overfitting.
+
 
 
 
