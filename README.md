@@ -1,42 +1,40 @@
-# Critical Care Patient Data Analysis
+# Predictive Analysis of Critical Care Costs and other Healthcare factors
 
 ## Overview
-This project analyzes a dataset of 9,105 critically ill patients from various U.S. medical centers. Our aim is to use machine learning to improve end-of-life care decisions.
 
-## Dataset Description
-The dataset, sourced from [UCI Machine Learning Repository](https://archive.ics.uci.edu/dataset/880/support2), encompasses a diverse range of medical and demographic variables. It provides a comprehensive view of patient care in critical conditions.
+This repository contains the work of Pradip Ravichandran and Samuel Devdas, focused on leveraging machine learning methods to analyze and predict various factors affecting critically ill patients, particularly emphasizing the prediction of medical charges for life support patients. The dataset comprises records from 9105 critically ill patients across five U.S. medical centers between 1989 and 1994, sourced from [UCI Machine Learning Repository](https://archive.ics.uci.edu/dataset/880/support2).
 
-## Objectives
-- To conduct a full-scale analysis using machine learning methods taught in class.
-- Utilize models like Linear Models, Generalized Linear Models, Generalized Additive Model, and others.
-- Focus on delivering insights that could be pivotal in critical healthcare decision-making.
+## Objective
 
-## Methodology
-1. **Data Preprocessing**: Address missing values, encode categorical data, and perform feature engineering.
-2. **Exploratory Data Analysis (EDA)**: Examine data distributions, correlations, and key patterns.
-3. **Model Development**: Apply various machine learning techniques.
-4. **Model Evaluation**: Use metrics like RMSE for model comparison.
-5. **Interpretation**: Provide a comprehensive interpretation of the findings and their implications.
+The primary goal of this project is to develop robust machine learning models that can accurately predict the medical charges for life support patients. This analysis serves key purposes in financial management, insurance processing, cost-effectiveness, policy making, and ensuring ethical, patient-centered care.
 
-## Tools
-- **R Language**: Main programming language used.
-- **R Libraries**: Including `caret`, `naniar`, `ggplot2`, etc.
+## Repository Structure
 
-## How to Run
-...
 
-## Team Members
-- Samuel Devdas
-- Pradip Ravichandran
+## Models
 
-## Acknowledgements
-Thanks to the providers of the dataset and our course instructors for guidance.
+1. **Linear Regression Models**: Employed for understanding relationships between variables.
+2. **Poisson Regression Models**: Used for predicting the number of comorbidities.
+3, **Logistic Regression Models**: Used for predicting if patient died in hospital.
+4. **Artificial Neural Networks (ANN)**: Advanced modeling for pattern recognition.
+5. **Support Vector Machines (SVM)**: Utilized for classification and regression challenges.
+
+## Installation and Usage
+
+Detailed instructions for setting up the environment, installing dependencies, and running the models are provided in the respective folders.
 
 ## License
-'All Rights Reserved'
+
+This project is licensed under the MIT License - see the `LICENSE.md` file for details.
 
 ## Contact
-For inquiries, please contact
+
+- Pradip Ravichandran 
+- Samuel Devdas
+
+## Acknowledgments
+
+Special thanks to the UCI Machine Learning Repository for providing the dataset and to our academic mentors for their guidance and support throughout this project.
 
 ---
 
