@@ -10,7 +10,17 @@ The primary goal of this project is to develop robust machine learning models th
 
 ## Repository Structure
 
-Devdas_Ravichandran_22-881-692
+Devdas_Ravichandran_22-881-692/
+│
+├── Report.html
+│
+├── Support.Rmd
+│
+├── support2.csv                # Raw dataset
+│
+├── support-variables-description.csv    # Dataset description, variables, etc.
+│
+└── Readme.Rmd
 
 ## Models
 
