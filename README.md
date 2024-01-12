@@ -10,6 +10,7 @@ The primary goal of this project is to develop robust machine learning models th
 
 ## Repository Structure
 
+Devdas_Ravichandran_22-881-692
 
 ## Models
 
@@ -22,10 +23,6 @@ The primary goal of this project is to develop robust machine learning models th
 ## Installation and Usage
 
 Detailed instructions for setting up the environment, installing dependencies, and running the models are provided in the respective folders.
-
-## License
-
-This project is licensed under the MIT License - see the `LICENSE.md` file for details.
 
 ## Contact
 
